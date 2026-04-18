@@ -1,4 +1,4 @@
-package com.lezzzetly.backend;
+package com.lezzetly.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
