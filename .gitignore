@@ -1,25 +1,61 @@
-# Java / Spring Boot
-backend/target/
+# --- Ortak ---
+.DS_Store
+Thumbs.db
+*.log
+*.log.*
+*.tmp
+*.temp
+*.pid
+*.swp
+*.swo
+*~
 
-# Node / Next.js
+# --- Gizli / yerel ortam ---
+.env
+.env.*
+!.env.example
+!.env*.example
+**/application-local.properties
+**/application-secrets.properties
+
+# --- Java / Maven / Spring ---
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/.classpath
+backend/.project
+backend/.settings/
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# --- Node / Next.js ---
 frontend/node_modules/
 frontend/.next/
 frontend/out/
+frontend/build/
+frontend/dist/
+frontend/.turbo/
+frontend/.vercel/
+frontend/coverage/
+frontend/.pnpm-debug.log*
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
 
-# Env files
-.env
-.env.local
-frontend/.env.local
-backend/.env
+# --- Paketleyici / önbellek ---
+.npm/
+.cache/
+.parcel-cache/
 
-# IDE
+# --- IDE ---
 .idea/
 .vscode/
 *.iml
+*.ipr
+*.iws
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
+# --- OS ---
+Desktop.ini
