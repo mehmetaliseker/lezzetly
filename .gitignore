@@ -15,8 +15,28 @@ Thumbs.db
 .env.*
 !.env.example
 !.env*.example
+
+# Spring: repoya gitmemesi gereken / kişiye özel uygulama yapılandırması
 **/application-local.properties
+**/application-local.yml
+**/application-local.yaml
 **/application-secrets.properties
+**/application-secrets.yml
+**/application-secrets.yaml
+**/application-*-local.properties
+**/application-credentials.properties
+**/application-override.properties
+
+# Anahtar, sertifika, kimlik dosyaları
+*.pem
+*.key
+*.p12
+*.jks
+*.pfx
+**/credentials.json
+**/service-account*.json
+**/secrets/
+**/local.properties
 
 # --- Java / Maven / Spring ---
 backend/target/

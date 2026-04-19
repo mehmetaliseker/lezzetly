@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Configuration;
 import com.lezzetly.backend.repository.ReservationRepository;
 import com.lezzetly.backend.repository.RestaurantRepository;
 import com.lezzetly.backend.repository.memory.InMemoryReservationRepository;
-import com.lezzetly.backend.repository.memory.InMemoryRestaurantRepository;
 import com.lezzetly.backend.service.DefaultFeatureFlagService;
 import com.lezzetly.backend.service.DefaultReservationService;
 import com.lezzetly.backend.service.DefaultRestaurantService;
@@ -16,11 +15,6 @@ import com.lezzetly.backend.service.RestaurantService;
 
 @Configuration
 public class ApplicationBeans {
-
-	@Bean
-	public RestaurantRepository restaurantRepository() {
-		return new InMemoryRestaurantRepository();
-	}
 
 	@Bean
 	public ReservationRepository reservationRepository() {
