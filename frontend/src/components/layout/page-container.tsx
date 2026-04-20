@@ -7,6 +7,8 @@ const maxWidthClass = {
 	medium: "max-w-2xl",
 	wide: "max-w-4xl",
 	xl: "max-w-6xl",
+	/** Navbar ile aynı yatay hizalama (max-w-7xl + px) */
+	site: "max-w-7xl",
 } as const;
 
 export type PageContainerWidth = keyof typeof maxWidthClass;

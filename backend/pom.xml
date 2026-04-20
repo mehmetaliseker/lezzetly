@@ -58,6 +58,14 @@
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
@@ -85,6 +93,8 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<!-- Flyway filesystem:sql/postgresql yolu JVM çalışma dizinine göre; modül kökü olmalı -->
+					<workingDirectory>${project.basedir}</workingDirectory>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>

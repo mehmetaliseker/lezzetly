@@ -32,13 +32,13 @@ export function HomeHero() {
 							className={cn(
 								"inline-flex min-h-11 items-center justify-center rounded-md bg-stone-50 px-6 py-2.5 text-sm font-semibold text-stone-900 shadow-sm transition duration-200 hover:bg-white hover:shadow-md"
 							)}
-							href="/restaurants"
+							href="/login?type=customer"
 						>
 							Masa bul
 						</Link>
 						<Link
 							className="inline-flex min-h-11 items-center justify-center rounded-md border border-stone-400/60 bg-transparent px-6 py-2.5 text-sm font-semibold text-stone-50 transition duration-200 hover:border-amber-200/50 hover:bg-stone-950/40"
-							href="/register"
+							href="/login?type=owner&tab=register"
 						>
 							Restoranını kaydet
 						</Link>

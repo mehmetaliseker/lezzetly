@@ -6,7 +6,7 @@ const navMuted =
 
 export function SiteHeader() {
 	return (
-		<header className="fixed inset-x-0 top-0 z-50 border-b border-stone-800/40 bg-stone-950/55 backdrop-blur-xl backdrop-saturate-150">
+		<header className="fixed inset-x-0 top-0 z-50 border-b border-stone-800/55 bg-stone-950/72 backdrop-blur-xl backdrop-saturate-150">
 			<div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
 				<Link
 					className="font-display text-lg font-semibold tracking-tight text-stone-50 transition-opacity hover:opacity-80"

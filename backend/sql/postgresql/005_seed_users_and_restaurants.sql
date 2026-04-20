@@ -1,18 +1,6 @@
-INSERT INTO users (id, first_name, last_name, email, password_hash, role, active)
-VALUES
-	(1, 'Ayşe', 'Yönetici', 'admin@lezzetly.local', '$2a$12$OvFNFIXPLACEHOLDERNOTAVALIDBCRYPTHASHVALUE00000000000000000000000', 'ADMIN', TRUE),
-	(2, 'Mehmet', 'Sahil', 'owner@lezzetly.local', '$2a$12$OvFNFIXPLACEHOLDERNOTAVALIDBCRYPTHASHVALUE00000000000000000000000', 'OWNER', TRUE),
-	(3, 'Zeynep', 'Misafir', 'customer@lezzetly.local', '$2a$12$OvFNFIXPLACEHOLDERNOTAVALIDBCRYPTHASHVALUE00000000000000000000000', 'CUSTOMER', TRUE)
-ON CONFLICT (email) DO NOTHING;
-
-SELECT setval(
-	pg_get_serial_sequence('users', 'id'),
-	(SELECT COALESCE(MAX(id), 1) FROM users)
-);
-
+-- Örnek restoran alanları (kullanıcı seed yok; owner_user_id uygulama üzerinden atanır)
 UPDATE restaurants
 SET
-	owner_user_id = 2,
 	description = 'Ege mutfağı ve deniz ürünleri; aile işletmesi.',
 	address = 'Alsancak, İzmir',
 	phone = '+90 232 000 00 01',
@@ -24,7 +12,6 @@ WHERE id = 1;
 
 UPDATE restaurants
 SET
-	owner_user_id = 2,
 	description = 'Ankara''da geleneksel lezzetler; etkinlik ve grup yemekleri.',
 	address = 'Çankaya, Ankara',
 	phone = '+90 312 000 00 02',

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.lezzetly.backend.dto.ErrorResponse;
 
@@ -17,6 +18,12 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException exception) {
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(exception.getMessage()));
+	}
+
+	@ExceptionHandler(ResponseStatusException.class)
+	public ResponseEntity<ErrorResponse> handleResponseStatus(ResponseStatusException exception) {
+		String message = exception.getReason() != null ? exception.getReason() : "İstek reddedildi";
+		return ResponseEntity.status(exception.getStatusCode()).body(ErrorResponse.of(message));
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
