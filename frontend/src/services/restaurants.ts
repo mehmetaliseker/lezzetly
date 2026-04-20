@@ -1,21 +1,12 @@
-import { getApiBaseUrl } from "@/lib/api-base";
+import { apiJson } from "@/lib/api-client";
+import type { RestaurantResponse } from "@/types/api/restaurant";
 
-export type RestaurantResponse = {
-	id: number;
-	name: string;
-	city: string;
-	pricePerHour: number;
-	active: boolean;
-};
+export type { RestaurantResponse } from "@/types/api/restaurant";
 
 export async function fetchRestaurants(): Promise<RestaurantResponse[]> {
-	const response = await fetch(`${getApiBaseUrl()}/api/restaurants`, {
-		cache: "no-store",
-	});
+	return apiJson<RestaurantResponse[]>("/api/restaurants");
+}
 
-	if (!response.ok) {
-		throw new Error("Restoranlar yüklenemedi");
-	}
-
-	return response.json() as Promise<RestaurantResponse[]>;
+export async function fetchRestaurantById(id: number): Promise<RestaurantResponse> {
+	return apiJson<RestaurantResponse>(`/api/restaurants/${id}`);
 }

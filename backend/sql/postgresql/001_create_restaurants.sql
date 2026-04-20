@@ -1,6 +1,3 @@
--- PostgreSQL: restoranlar tablosu (manuel çalıştırın; Flyway/Liquibase kullanılmaz.)
--- Şema adı kullanmıyorsanız varsayılan public şemasına oluşur.
-
 CREATE TABLE IF NOT EXISTS restaurants (
 	id BIGSERIAL PRIMARY KEY,
 	name VARCHAR(200) NOT NULL,

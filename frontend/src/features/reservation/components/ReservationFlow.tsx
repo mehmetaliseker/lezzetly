@@ -2,10 +2,20 @@
 
 import { useMemo, useState } from "react";
 
+import { ErrorState } from "@/components/feedback/error-state";
+import { LoadingState } from "@/components/feedback/loading-state";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input, nativeFieldClassName } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { SectionTitle } from "@/components/ui/section-title";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { useCreateReservation } from "@/hooks/use-create-reservation";
 import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import { useRestaurants } from "@/hooks/use-restaurants";
+
+import { ReservationSummary } from "./reservation-summary";
 
 export function ReservationFlow() {
 	const restaurantsQuery = useRestaurants();
@@ -23,136 +33,131 @@ export function ReservationFlow() {
 	);
 
 	if (featureFlagsQuery.isLoading) {
-		return <p className="text-sm text-zinc-600">Özellik bayrakları yükleniyor…</p>;
+		return <LoadingState title="Akış hazırlanıyor" message="Özellik bayrakları kontrol ediliyor…" />;
 	}
 
 	if (!flowEnabled) {
 		return (
-			<p className="text-sm text-amber-700">
-				Rezervasyon akışı bu ortamda devre dışı (feature flag: RESERVATION_FLOW_V1).
-			</p>
+			<Card>
+				<CardHeader>
+					<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+						<div className="flex min-w-0 flex-col gap-1">
+							<h2 className="text-lg font-semibold tracking-tight text-zinc-900">
+								Rezervasyon geçici olarak kapalı
+							</h2>
+							<p className="text-sm leading-relaxed text-zinc-600">
+								Bu ortamda RESERVATION_FLOW_V1 bayrağı kapalı. Backend’de bayrağı açtıktan sonra sayfayı
+								yenileyin.
+							</p>
+						</div>
+						<Badge className="shrink-0" variant="warning">
+							Kapalı
+						</Badge>
+					</div>
+				</CardHeader>
+			</Card>
 		);
 	}
 
 	if (restaurantsQuery.isLoading) {
-		return <p className="text-sm text-zinc-600">Restoranlar yükleniyor…</p>;
+		return <LoadingState title="Restoranlar yükleniyor" message="Seçim listesi hazırlanıyor…" />;
 	}
 
 	if (restaurantsQuery.isError) {
 		return (
-			<p className="text-sm text-red-600">
-				Restoranlar alınamadı. Backend çalışıyor mu ve CORS açık mı kontrol edin.
-			</p>
+			<ErrorState
+				message="Restoranlar alınamadı. Backend çalışıyor mu ve CORS açık mı kontrol edin."
+			/>
 		);
 	}
 
 	const restaurants = restaurantsQuery.data ?? [];
 
 	return (
-		<div className="flex flex-col gap-6">
-			<form
-				className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm"
-				onSubmit={(event) => {
-					event.preventDefault();
-					if (!restaurantId || !date || !startTime || !endTime) {
-						return;
-					}
-
-					createReservation.mutate({
-						restaurantId: Number(restaurantId),
-						date,
-						startTime: normalizeTime(startTime),
-						endTime: normalizeTime(endTime),
-					});
-				}}
-			>
-				<div className="flex flex-col gap-2">
-					<label className="text-sm font-medium text-zinc-800" htmlFor="restaurant">
-						Restoran
-					</label>
-					<select
-						className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-						id="restaurant"
-						value={restaurantId}
-						onChange={(event) => setRestaurantId(event.target.value)}
-						required
-					>
-						<option value="">Seçiniz</option>
-						{restaurants.map((restaurant) => (
-							<option key={restaurant.id} value={restaurant.id}>
-								{restaurant.name} — {restaurant.city}
-							</option>
-						))}
-					</select>
-				</div>
-
-				<div className="flex flex-col gap-2">
-					<label className="text-sm font-medium text-zinc-800" htmlFor="date">
-						Tarih
-					</label>
-					<input
-						className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-						id="date"
-						type="date"
-						value={date}
-						onChange={(event) => setDate(event.target.value)}
-						required
+		<div className="flex flex-col gap-8">
+			<Card>
+				<CardHeader>
+					<SectionTitle
+						title="Rezervasyon formu"
+						description="Restoran, tarih ve saat aralığını seçin. Süre ve toplam tutar sunucuda hesaplanır."
 					/>
-				</div>
+				</CardHeader>
+				<CardContent>
+					<form
+						className="flex flex-col gap-6"
+						onSubmit={(event) => {
+							event.preventDefault();
+							if (!restaurantId || !date || !startTime || !endTime) {
+								return;
+							}
 
-				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-zinc-800" htmlFor="start">
-							Başlangıç saati
-						</label>
-						<input
-							className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-							id="start"
-							type="time"
-							value={startTime}
-							onChange={(event) => setStartTime(event.target.value)}
-							required
-						/>
-					</div>
-					<div className="flex flex-col gap-2">
-						<label className="text-sm font-medium text-zinc-800" htmlFor="end">
-							Bitiş saati
-						</label>
-						<input
-							className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-							id="end"
-							type="time"
-							value={endTime}
-							onChange={(event) => setEndTime(event.target.value)}
-							required
-						/>
-					</div>
-				</div>
+							createReservation.mutate({
+								restaurantId: Number(restaurantId),
+								date,
+								startTime: normalizeTime(startTime),
+								endTime: normalizeTime(endTime),
+							});
+						}}
+					>
+						<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+							<div className="flex flex-col gap-2">
+								<Label htmlFor="restaurant">Restoran</Label>
+								<select
+									className={nativeFieldClassName}
+									id="restaurant"
+									value={restaurantId}
+									onChange={(event) => setRestaurantId(event.target.value)}
+									required
+								>
+									<option value="">Seçiniz</option>
+									{restaurants.map((restaurant) => (
+										<option key={restaurant.id} value={restaurant.id}>
+											{restaurant.name} — {restaurant.city}
+										</option>
+									))}
+								</select>
+							</div>
 
-				<button
-					className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-					type="submit"
-					disabled={createReservation.isPending}
-				>
-					{createReservation.isPending ? "Gönderiliyor…" : "Rezervasyonu oluştur"}
-				</button>
-			</form>
+							<div className="flex flex-col gap-2">
+								<Label htmlFor="date">Tarih</Label>
+								<Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+							</div>
+						</div>
 
-			{createReservation.isError && (
-				<p className="text-sm text-red-600">{createReservation.error.message}</p>
-			)}
+						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+							<div className="flex flex-col gap-2">
+								<Label htmlFor="start">Başlangıç saati</Label>
+								<Input
+									id="start"
+									type="time"
+									value={startTime}
+									onChange={(e) => setStartTime(e.target.value)}
+									required
+								/>
+							</div>
+							<div className="flex flex-col gap-2">
+								<Label htmlFor="end">Bitiş saati</Label>
+								<Input id="end" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
+							</div>
+						</div>
 
-			{createReservation.isSuccess && createReservation.data && (
-				<div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-					<p className="font-medium">Rezervasyon oluşturuldu</p>
-					<ul className="mt-2 list-disc space-y-1 pl-5">
-						<li>Rezervasyon no: {createReservation.data.id}</li>
-						<li>Süre (dk): {createReservation.data.durationMinutes}</li>
-						<li>Toplam: {createReservation.data.totalPrice}</li>
-						<li>Durum: {createReservation.data.status}</li>
-					</ul>
-				</div>
-			)}
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+							{createReservation.isError ? (
+								<p className="text-sm text-red-600">{createReservation.error.message}</p>
+							) : (
+								<span className="text-xs text-zinc-500">Gönderim sonrası özet aşağıda görünür.</span>
+							)}
+							<Button className="w-full sm:w-auto" disabled={createReservation.isPending} type="submit">
+								{createReservation.isPending ? "Gönderiliyor…" : "Rezervasyonu oluştur"}
+							</Button>
+						</div>
+					</form>
+				</CardContent>
+			</Card>
+
+			{createReservation.isSuccess && createReservation.data ? (
+				<ReservationSummary data={createReservation.data} />
+			) : null}
 		</div>
 	);
 }
