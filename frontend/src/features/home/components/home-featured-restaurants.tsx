@@ -18,8 +18,8 @@ export function HomeFeaturedRestaurants() {
 
 	if (query.isLoading) {
 		return (
-			<section className="border-b border-stone-200/80 bg-white py-16 sm:py-20">
-				<PageContainer maxWidth="xl" className="max-w-7xl">
+			<section className="home-section border-b border-stone-200/80 bg-white">
+				<PageContainer maxWidth="xl" className="flex w-full max-w-7xl items-center">
 					<LoadingState title="Öne çıkanlar yükleniyor" message="Restoran listesi getiriliyor…" />
 				</PageContainer>
 			</section>
@@ -28,8 +28,8 @@ export function HomeFeaturedRestaurants() {
 
 	if (query.isError) {
 		return (
-			<section className="border-b border-stone-200/80 bg-white py-16 sm:py-20">
-				<PageContainer maxWidth="xl" className="max-w-7xl">
+			<section className="home-section border-b border-stone-200/80 bg-white">
+				<PageContainer maxWidth="xl" className="flex w-full max-w-7xl items-center">
 					<ErrorState
 						message={
 							query.error instanceof Error
@@ -44,8 +44,8 @@ export function HomeFeaturedRestaurants() {
 
 	if (items.length === 0) {
 		return (
-			<section className="border-b border-stone-200/80 bg-white py-16 sm:py-20">
-				<PageContainer maxWidth="xl" className="max-w-7xl">
+			<section className="home-section border-b border-stone-200/80 bg-white">
+				<PageContainer maxWidth="xl" className="flex w-full max-w-7xl items-center">
 					<EmptyState
 						title="Henüz vitrin restoranı yok"
 						description="Veritabanında aktif işletme görünmüyor. Yine de tüm listeyi görmek için restoranlar sayfasına gidebilirsiniz."
@@ -64,8 +64,8 @@ export function HomeFeaturedRestaurants() {
 	}
 
 	return (
-		<section className="border-b border-stone-200/80 bg-white py-16 sm:py-20 lg:py-24">
-			<PageContainer maxWidth="xl" className="max-w-7xl">
+		<section className="home-section border-b border-stone-200/80 bg-white">
+			<PageContainer maxWidth="xl" className="flex w-full max-w-7xl flex-col justify-center">
 				<div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
 					<div className="max-w-xl">
 						<h2 className="font-display text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
@@ -91,8 +91,8 @@ export function HomeFeaturedRestaurants() {
 									className="group block h-full rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-700/40 focus-visible:ring-offset-2"
 									href={`/restaurants/${restaurant.id}`}
 								>
-									<article className="flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200/90 bg-stone-50/40 shadow-sm ring-1 ring-stone-950/[0.04] transition duration-300 group-hover:border-stone-300 group-hover:shadow-lg">
-										<div className="relative aspect-[4/3] w-full overflow-hidden bg-stone-200">
+									<article className="flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200/90 bg-stone-50/40 shadow-sm ring-1 ring-stone-950/4 transition duration-300 group-hover:border-stone-300 group-hover:shadow-lg">
+										<div className="relative aspect-4/3 w-full overflow-hidden bg-stone-200">
 											<Image
 												alt={`${restaurant.name} — mekân atmosferi`}
 												className="object-cover transition duration-500 group-hover:scale-[1.02]"

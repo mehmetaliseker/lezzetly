@@ -8,7 +8,7 @@ import { HomeTrust } from "@/features/home/components/home-trust";
 
 export default function Home() {
 	return (
-		<div className="flex flex-col">
+		<main className="flex flex-col bg-brand-light">
 			<HomeHero />
 			<HomeOverview />
 			<HomeFeaturedRestaurants />
@@ -16,6 +16,6 @@ export default function Home() {
 			<HomeTrust />
 			<HomeFinalCta />
 			<HomeFooter />
-		</div>
+		</main>
 	);
 }

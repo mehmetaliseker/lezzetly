@@ -58,8 +58,8 @@ const ownerSteps = [
 
 export function HomeHowItWorks() {
 	return (
-		<section className="scroll-mt-24 border-b border-stone-200/80 bg-stone-50 py-16 sm:py-20 lg:py-24" id="nasil-calisir">
-			<PageContainer maxWidth="xl" className="max-w-7xl">
+		<section className="home-section border-b border-stone-200/80 bg-brand-light" id="nasil-calisir">
+			<PageContainer maxWidth="xl" className="flex w-full max-w-7xl flex-col justify-center">
 				<div className="mx-auto max-w-2xl text-center">
 					<h2 className="font-display text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
 						Nasıl çalışır?

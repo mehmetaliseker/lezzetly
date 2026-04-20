@@ -11,10 +11,10 @@ const bullets = [
 
 export function HomeTrust() {
 	return (
-		<section className="border-b border-stone-200/80 bg-white py-16 sm:py-20 lg:py-24">
-			<PageContainer maxWidth="xl" className="max-w-7xl">
+		<section className="home-section border-b border-stone-200/80 bg-white">
+			<PageContainer maxWidth="xl" className="flex w-full max-w-7xl flex-col justify-center">
 				<div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-					<div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-stone-200 shadow-md ring-1 ring-stone-950/5">
+					<div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl bg-stone-200 shadow-md ring-1 ring-stone-950/5">
 						<Image
 							alt="Sakin ve zarif bir yemek deneyimi ortamı"
 							className="object-cover"

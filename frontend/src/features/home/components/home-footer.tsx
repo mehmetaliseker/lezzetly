@@ -50,23 +50,15 @@ export function HomeFooter() {
 						</ul>
 					</div>
 				</div>
-				<div className="mt-12 flex flex-col gap-4 border-t border-stone-800/80 pt-8 sm:flex-row sm:items-center sm:justify-between">
+				<div className="mt-6 flex flex-col gap-4 border-t border-stone-800/80 pt-6 sm:flex-row sm:items-center sm:justify-between">
 					<p className="text-xs text-stone-600">© {new Date().getFullYear()} Lezzetly. Tüm hakları saklıdır.</p>
 					<div className="flex flex-wrap gap-x-6 gap-y-2">
-						<Link className="text-xs text-stone-600 hover:text-stone-400" href="#">
-							Gizlilik
+						<Link className="text-xs text-stone-600 hover:text-stone-400" href="/gizlilik">
+							Gizlilik Politikası
 						</Link>
-						<Link className="text-xs text-stone-600 hover:text-stone-400" href="#">
+						<Link className="text-xs text-stone-600 hover:text-stone-400" href="/kullanim-sartlari">
 							Kullanım şartları
 						</Link>
-						<a
-							className="text-xs text-stone-600 hover:text-stone-400"
-							href="http://localhost:8080/swagger-ui.html"
-							rel="noreferrer"
-							target="_blank"
-						>
-							API dokümantasyonu
-						</a>
 					</div>
 				</div>
 			</div>
