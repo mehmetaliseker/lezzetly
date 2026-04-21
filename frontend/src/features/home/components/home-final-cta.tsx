@@ -4,8 +4,14 @@ import { PageContainer } from "@/components/layout/page-container";
 
 export function HomeFinalCta() {
 	return (
-		<section className="home-section home-section-compact bg-brand-dark">
-			<PageContainer maxWidth="xl" className="flex w-full max-w-7xl flex-col justify-center">
+		<section className="home-section home-section-compact relative overflow-hidden">
+			<div
+				aria-hidden
+				className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat"
+				style={{ backgroundImage: "url('/side5.jpeg')" }}
+			/>
+			<div aria-hidden className="pointer-events-none absolute inset-0 bg-black/50" />
+			<PageContainer maxWidth="xl" className="relative z-10 flex w-full max-w-7xl flex-col justify-center">
 				<div className="mx-auto max-w-3xl text-center">
 					<h2 className="font-display text-3xl font-semibold tracking-tight text-stone-50 sm:text-4xl">
 						Hazır olduğunuzda bir sonraki adım sizin
