@@ -1,13 +1,9 @@
 package com.lezzetly.backend.repository.jdbc;
 
-import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import com.lezzetly.backend.domain.User;
@@ -35,11 +31,7 @@ public class JdbcUserRepository implements UserRepository {
 	private static final String INSERT = """
 			INSERT INTO users (first_name, last_name, email, password_hash, role, active)
 			VALUES (?, ?, ?, ?, ?, ?)
-			""";
-
-	private static final String FIND_BY_ID = SELECT_COLUMNS + """
-			WHERE id = ?
-			LIMIT 1
+			RETURNING id
 			""";
 
 	private final JdbcTemplate jdbcTemplate;
@@ -64,29 +56,30 @@ public class JdbcUserRepository implements UserRepository {
 
 	@Override
 	public User save(User user) {
-		KeyHolder keyHolder = new GeneratedKeyHolder();
-		int affected = jdbcTemplate.update(connection -> {
-			PreparedStatement ps = connection.prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS);
-			ps.setString(1, user.firstName());
-			ps.setString(2, user.lastName());
-			ps.setString(3, user.email());
-			ps.setString(4, user.passwordHash());
-			ps.setString(5, user.role().name());
-			ps.setBoolean(6, user.active());
-			return ps;
-		}, keyHolder);
-
-		if (affected == 0) {
-			throw new IllegalStateException("Kullanıcı kaydedilemedi");
-		}
-
-		Number generatedId = keyHolder.getKey();
+		Long generatedId = jdbcTemplate.queryForObject(
+				INSERT,
+				Long.class,
+				user.firstName(),
+				user.lastName(),
+				user.email(),
+				user.passwordHash(),
+				user.role().name(),
+				user.active()
+		);
 		if (generatedId == null) {
 			throw new IllegalStateException("Kullanıcı kimliği üretilemedi");
 		}
 
-		return jdbcTemplate.query(FIND_BY_ID, userRowMapper, generatedId.longValue()).stream()
-				.findFirst()
-				.orElseThrow(() -> new IllegalStateException("Kaydedilen kullanıcı okunamadı"));
+		return new User(
+				generatedId,
+				user.firstName(),
+				user.lastName(),
+				user.email(),
+				user.passwordHash(),
+				user.role(),
+				user.active(),
+				null,
+				null
+		);
 	}
 }
