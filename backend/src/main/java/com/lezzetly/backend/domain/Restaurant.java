@@ -7,6 +7,8 @@ public record Restaurant(
 		String name,
 		String city,
 		BigDecimal pricePerHour,
-		boolean active
+		boolean active,
+		Integer capacity,
+		String imageUrl
 ) {
 }

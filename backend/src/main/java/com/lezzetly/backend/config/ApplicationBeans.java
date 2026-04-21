@@ -7,8 +7,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.lezzetly.backend.repository.ReservationRepository;
 import com.lezzetly.backend.repository.RestaurantRepository;
+import com.lezzetly.backend.repository.RestaurantImageRepository;
+import com.lezzetly.backend.repository.RestaurantTableRepository;
+import com.lezzetly.backend.repository.ReservationSlotRepository;
+import com.lezzetly.backend.repository.RefreshTokenRepository;
 import com.lezzetly.backend.repository.UserRepository;
-import com.lezzetly.backend.repository.memory.InMemoryReservationRepository;
+import com.lezzetly.backend.security.JwtService;
+import com.lezzetly.backend.security.TokenHashService;
 import com.lezzetly.backend.service.AuthService;
 import com.lezzetly.backend.service.DefaultAuthService;
 import com.lezzetly.backend.service.DefaultFeatureFlagService;
@@ -22,21 +27,31 @@ import com.lezzetly.backend.service.RestaurantService;
 public class ApplicationBeans {
 
 	@Bean
-	public ReservationRepository reservationRepository() {
-		return new InMemoryReservationRepository();
-	}
-
-	@Bean
-	public RestaurantService restaurantService(RestaurantRepository restaurantRepository) {
-		return new DefaultRestaurantService(restaurantRepository);
+	public RestaurantService restaurantService(
+			RestaurantRepository restaurantRepository,
+			RestaurantTableRepository restaurantTableRepository,
+			RestaurantImageRepository restaurantImageRepository
+	) {
+		return new DefaultRestaurantService(
+				restaurantRepository,
+				restaurantTableRepository,
+				restaurantImageRepository
+		);
 	}
 
 	@Bean
 	public ReservationService reservationService(
 			RestaurantRepository restaurantRepository,
-			ReservationRepository reservationRepository
+			ReservationRepository reservationRepository,
+			RestaurantTableRepository restaurantTableRepository,
+			ReservationSlotRepository reservationSlotRepository
 	) {
-		return new DefaultReservationService(restaurantRepository, reservationRepository);
+		return new DefaultReservationService(
+				restaurantRepository,
+				reservationRepository,
+				restaurantTableRepository,
+				reservationSlotRepository
+		);
 	}
 
 	@Bean
@@ -50,7 +65,19 @@ public class ApplicationBeans {
 	}
 
 	@Bean
-	public AuthService authService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-		return new DefaultAuthService(userRepository, passwordEncoder);
+	public AuthService authService(
+			UserRepository userRepository,
+			PasswordEncoder passwordEncoder,
+			JwtService jwtService,
+			TokenHashService tokenHashService,
+			RefreshTokenRepository refreshTokenRepository
+	) {
+		return new DefaultAuthService(
+				userRepository,
+				passwordEncoder,
+				jwtService,
+				tokenHashService,
+				refreshTokenRepository
+		);
 	}
 }

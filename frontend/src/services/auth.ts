@@ -1,5 +1,11 @@
 import { apiJson } from "@/lib/api-client";
-import type { AuthResponse, LoginPayload, RegisterPayload } from "@/types/api/auth";
+import type {
+	AuthResponse,
+	CurrentUserResponse,
+	LoginPayload,
+	RefreshTokenResponse,
+	RegisterPayload,
+} from "@/types/api/auth";
 
 type AccountType = "customer" | "owner";
 
@@ -32,4 +38,28 @@ export async function register(accountType: AccountType, payload: RegisterPayloa
 		},
 		body: JSON.stringify(payload),
 	});
+}
+
+export async function refresh(refreshToken: string): Promise<RefreshTokenResponse> {
+	return apiJson<RefreshTokenResponse>("/api/auth/refresh", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({ refreshToken }),
+	});
+}
+
+export async function logout(refreshToken: string): Promise<void> {
+	await apiJson<void>("/api/auth/logout", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({ refreshToken }),
+	});
+}
+
+export async function me(): Promise<CurrentUserResponse> {
+	return apiJson<CurrentUserResponse>("/api/auth/me");
 }

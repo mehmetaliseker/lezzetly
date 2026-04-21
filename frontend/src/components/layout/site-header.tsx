@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { useLogoutMutation } from "@/hooks/use-logout";
+import { readAccessToken } from "@/lib/token-storage";
 import { useNavbarVariant } from "../../hooks/use-navbar-variant";
 
 const navMuted =
@@ -32,7 +36,13 @@ function resolveLoginButtonClassName(variant: "primary" | "secondary" | "tertiar
 }
 
 export function SiteHeader() {
+	const router = useRouter();
 	const variant = useNavbarVariant();
+	const currentUserQuery = useCurrentUser();
+	const logoutMutation = useLogoutMutation();
+	const hasAccessToken = Boolean(readAccessToken());
+	const isAuthenticated = hasAccessToken || currentUserQuery.data != null;
+	const isCustomer = currentUserQuery.data?.role === "CUSTOMER";
 	const shouldHideMenuLinks = variant === "primary" || variant === "secondary";
 
 	return (
@@ -50,18 +60,39 @@ export function SiteHeader() {
 				>
 					{shouldHideMenuLinks ? null : (
 						<div className="hidden items-center gap-8 md:flex">
-							<Link className={navMuted} href="/">
-								Ana sayfa
-							</Link>
-							<Link className={navMuted} href="/restaurants">
-								Restoranlar
-							</Link>
+							{isCustomer ? (
+								<Link className={navMuted} href="/rezervasyon">
+									Rezervasyon
+								</Link>
+							) : (
+								<>
+									<Link className={navMuted} href="/">
+										Ana sayfa
+									</Link>
+									<Link className={navMuted} href="/restaurants">
+										Restoranlar
+									</Link>
+								</>
+							)}
 						</div>
 					)}
 					<div className="flex items-center gap-2 sm:gap-3">
-						<Link className={resolveLoginButtonClassName(variant)} href="/login">
-							Giriş Yap / Kayıt Ol
-						</Link>
+						{isAuthenticated ? (
+							<button
+								className={resolveLoginButtonClassName(variant)}
+								onClick={async () => {
+									await logoutMutation.mutateAsync();
+									router.push("/");
+								}}
+								type="button"
+							>
+								Çıkış Yap
+							</button>
+						) : (
+							<Link className={resolveLoginButtonClassName(variant)} href="/login">
+								Giriş Yap / Kayıt Ol
+							</Link>
+						)}
 					</div>
 				</nav>
 			</div>

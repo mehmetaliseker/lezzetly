@@ -5,4 +5,7 @@ export type RestaurantResponse = {
 	city: string;
 	pricePerHour: number;
 	active: boolean;
+	tableCount: number;
+	mainImageUrl: string | null;
+	detailImageUrls: string[];
 };

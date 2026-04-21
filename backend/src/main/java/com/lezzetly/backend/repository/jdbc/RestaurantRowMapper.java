@@ -17,7 +17,9 @@ public final class RestaurantRowMapper implements RowMapper<Restaurant> {
 				rs.getString("name"),
 				rs.getString("city"),
 				rs.getBigDecimal("price_per_hour"),
-				rs.getBoolean("active")
+				rs.getBoolean("active"),
+				(Integer) rs.getObject("capacity"),
+				rs.getString("image_url")
 		);
 	}
 }

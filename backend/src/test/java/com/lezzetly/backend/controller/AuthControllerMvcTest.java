@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.lezzetly.backend.dto.auth.AuthResponse;
 import com.lezzetly.backend.dto.auth.AuthUserResponse;
+import com.lezzetly.backend.dto.auth.TokenPairResponse;
 import com.lezzetly.backend.service.AuthService;
 
 @SpringBootTest
@@ -32,7 +33,11 @@ class AuthControllerMvcTest {
 	@Test
 	void postCustomerRegister_returnsCreated() throws Exception {
 		when(authService.registerCustomer(any())).thenReturn(
-				new AuthResponse("Kayıt başarılı", new AuthUserResponse(5L, "A", "B", "test@example.com", "CUSTOMER")));
+				new AuthResponse(
+						"Kayıt başarılı",
+						new AuthUserResponse(5L, "A", "B", "test@example.com", "CUSTOMER"),
+						new TokenPairResponse("access", "refresh", 900, 1209600)
+				));
 
 		mockMvc.perform(
 						post("/api/auth/customer/register")

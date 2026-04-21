@@ -18,9 +18,10 @@ export function ReservationSummary({ data }: ReservationSummaryProps) {
 			<CardContent className="grid gap-3 sm:grid-cols-2">
 				<SummaryRow label="Rezervasyon no" value={String(data.id)} />
 				<SummaryRow label="Restoran" value={`#${data.restaurantId}`} />
+				<SummaryRow label="Masa" value={String(data.tableNo)} />
 				<SummaryRow label="Tarih" value={data.date} />
-				<SummaryRow label="Saat" value={`${data.startTime} – ${data.endTime}`} />
-				<SummaryRow label="Süre" value={`${data.durationMinutes} dk`} />
+				<SummaryRow label="Saatler" value={data.selectedHours.map((hour) => `${hour}:00`).join(", ")} />
+				<SummaryRow label="Saat adedi" value={`${data.slotCount}`} />
 				<SummaryRow label="Toplam" value={String(data.totalPrice)} highlight />
 			</CardContent>
 		</Card>

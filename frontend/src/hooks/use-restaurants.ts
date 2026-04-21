@@ -10,5 +10,6 @@ export function useRestaurants() {
 		queryKey: queryKeys.restaurants.list(),
 		queryFn: fetchRestaurants,
 		staleTime: 5 * 60 * 1000,
+		retry: false,
 	});
 }

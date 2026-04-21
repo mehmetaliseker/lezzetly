@@ -24,8 +24,8 @@ export function ReservationFlow() {
 
 	const [restaurantId, setRestaurantId] = useState<string>("");
 	const [date, setDate] = useState<string>("");
-	const [startTime, setStartTime] = useState<string>("");
-	const [endTime, setEndTime] = useState<string>("");
+	const [tableNo, setTableNo] = useState<string>("1");
+	const [hourInput, setHourInput] = useState<string>("12");
 
 	const flowEnabled = useMemo(
 		() => isFeatureEnabled(featureFlagsQuery.data, "RESERVATION_FLOW_V1"),
@@ -87,15 +87,15 @@ export function ReservationFlow() {
 						className="flex flex-col gap-6"
 						onSubmit={(event) => {
 							event.preventDefault();
-							if (!restaurantId || !date || !startTime || !endTime) {
+							if (!restaurantId || !date || !tableNo || !hourInput) {
 								return;
 							}
 
 							createReservation.mutate({
 								restaurantId: Number(restaurantId),
 								date,
-								startTime: normalizeTime(startTime),
-								endTime: normalizeTime(endTime),
+								tableNo: Number(tableNo),
+								selectedHours: [Number(hourInput)],
 							});
 						}}
 					>
@@ -126,18 +126,27 @@ export function ReservationFlow() {
 
 						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
 							<div className="flex flex-col gap-2">
-								<Label htmlFor="start">Başlangıç saati</Label>
+								<Label htmlFor="table">Masa numarası</Label>
 								<Input
-									id="start"
-									type="time"
-									value={startTime}
-									onChange={(e) => setStartTime(e.target.value)}
+									id="table"
+									type="number"
+									min={1}
+									value={tableNo}
+									onChange={(e) => setTableNo(e.target.value)}
 									required
 								/>
 							</div>
 							<div className="flex flex-col gap-2">
-								<Label htmlFor="end">Bitiş saati</Label>
-								<Input id="end" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
+								<Label htmlFor="hour">Saat (0-23)</Label>
+								<Input
+									id="hour"
+									type="number"
+									min={0}
+									max={23}
+									value={hourInput}
+									onChange={(e) => setHourInput(e.target.value)}
+									required
+								/>
 							</div>
 						</div>
 
@@ -160,11 +169,4 @@ export function ReservationFlow() {
 			) : null}
 		</div>
 	);
-}
-
-function normalizeTime(value: string): string {
-	if (value.length === 5) {
-		return `${value}:00`;
-	}
-	return value;
 }

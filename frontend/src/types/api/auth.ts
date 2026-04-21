@@ -11,7 +11,22 @@ export type AuthUser = {
 export type AuthResponse = {
 	message: string;
 	user: AuthUser;
+	tokens: TokenPair;
 };
+
+export type TokenPair = {
+	accessToken: string;
+	refreshToken: string;
+	accessTokenExpiresInSeconds: number;
+	refreshTokenExpiresInSeconds: number;
+};
+
+export type RefreshTokenResponse = {
+	message: string;
+	tokens: TokenPair;
+};
+
+export type CurrentUserResponse = AuthUser;
 
 export type LoginPayload = {
 	email: string;

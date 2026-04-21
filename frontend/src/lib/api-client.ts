@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/lib/api-base";
+import { clearTokens, readAccessToken, readRefreshToken, writeTokens } from "@/lib/token-storage";
 
 export class ApiError extends Error {
 	public readonly status: number;
@@ -17,21 +18,92 @@ function buildUrl(path: string): string {
 }
 
 export async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
-	const response = await fetch(buildUrl(path), {
-		cache: "no-store",
-		...init,
-		headers: {
-			Accept: "application/json",
-			...init?.headers,
-		},
-	});
+	const response = await sendWithAuth(path, init);
 
 	if (!response.ok) {
 		const message = await readErrorBody(response);
 		throw new ApiError(message, response.status);
 	}
 
+	if (response.status === 204) {
+		return undefined as T;
+	}
 	return response.json() as Promise<T>;
+}
+
+let refreshPromise: Promise<void> | null = null;
+
+async function sendWithAuth(path: string, init?: RequestInit): Promise<Response> {
+	const includeAccessToken = shouldAttachAccessToken(path);
+	const firstResponse = await fetch(buildUrl(path), buildRequestInit(init, includeAccessToken));
+	if (firstResponse.status !== 401) {
+		return firstResponse;
+	}
+	const refreshToken = readRefreshToken();
+	if (!refreshToken) {
+		return firstResponse;
+	}
+	if (!canAutoRefresh(path)) {
+		return firstResponse;
+	}
+	if (!refreshPromise) {
+		refreshPromise = fetch(buildUrl("/api/auth/refresh"), {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+			},
+			body: JSON.stringify({ refreshToken }),
+		})
+			.then(async (response) => {
+				if (!response.ok) {
+					throw new Error("Refresh başarısız");
+				}
+				type RefreshPayload = {
+					tokens: { accessToken: string; refreshToken: string };
+				};
+				const payload = (await response.json()) as RefreshPayload;
+				return payload;
+			})
+			.then((result) => {
+				writeTokens(result.tokens);
+			})
+			.catch(() => {
+				clearTokens();
+			})
+			.finally(() => {
+				refreshPromise = null;
+			});
+	}
+	await refreshPromise;
+	return fetch(buildUrl(path), buildRequestInit(init, includeAccessToken));
+}
+
+function shouldAttachAccessToken(path: string): boolean {
+	if (path === "/api/auth/me") {
+		return true;
+	}
+	return !path.startsWith("/api/auth/");
+}
+
+function canAutoRefresh(path: string): boolean {
+	return path === "/api/auth/me" || !path.startsWith("/api/auth/");
+}
+
+function buildRequestInit(init: RequestInit | undefined, includeAccessToken: boolean): RequestInit {
+	const headers = new Headers(init?.headers);
+	headers.set("Accept", "application/json");
+	if (includeAccessToken) {
+		const accessToken = readAccessToken();
+		if (accessToken) {
+			headers.set("Authorization", `Bearer ${accessToken}`);
+		}
+	}
+	return {
+		cache: "no-store",
+		...init,
+		headers,
+	};
 }
 
 async function readErrorBody(response: Response): Promise<string> {

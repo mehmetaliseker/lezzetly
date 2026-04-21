@@ -1,7 +1,9 @@
 package com.lezzetly.backend.service;
 
 import com.lezzetly.backend.dto.auth.AuthResponse;
+import com.lezzetly.backend.dto.auth.CurrentUserResponse;
 import com.lezzetly.backend.dto.auth.LoginRequest;
+import com.lezzetly.backend.dto.auth.RefreshTokenResponse;
 import com.lezzetly.backend.dto.auth.RegisterRequest;
 
 public interface AuthService {
@@ -13,4 +15,10 @@ public interface AuthService {
 	AuthResponse loginOwner(LoginRequest request);
 
 	AuthResponse registerOwner(RegisterRequest request);
+
+	RefreshTokenResponse refresh(String refreshToken);
+
+	void logout(String refreshToken);
+
+	CurrentUserResponse currentUser(Long userId);
 }

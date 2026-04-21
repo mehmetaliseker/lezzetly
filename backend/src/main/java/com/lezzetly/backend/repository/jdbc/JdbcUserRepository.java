@@ -34,6 +34,11 @@ public class JdbcUserRepository implements UserRepository {
 			RETURNING id
 			""";
 
+	private static final String FIND_BY_ID = SELECT_COLUMNS + """
+			WHERE id = ?
+			LIMIT 1
+			""";
+
 	private final JdbcTemplate jdbcTemplate;
 	private final UserRowMapper userRowMapper;
 
@@ -45,6 +50,12 @@ public class JdbcUserRepository implements UserRepository {
 	@Override
 	public Optional<User> findActiveByEmail(String email) {
 		List<User> rows = jdbcTemplate.query(FIND_ACTIVE_BY_EMAIL, userRowMapper, email);
+		return rows.stream().findFirst();
+	}
+
+	@Override
+	public Optional<User> findById(Long id) {
+		List<User> rows = jdbcTemplate.query(FIND_BY_ID, userRowMapper, id);
 		return rows.stream().findFirst();
 	}
 

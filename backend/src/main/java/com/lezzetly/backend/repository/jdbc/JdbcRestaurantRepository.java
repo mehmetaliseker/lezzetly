@@ -13,7 +13,7 @@ import com.lezzetly.backend.repository.RestaurantRepository;
 public class JdbcRestaurantRepository implements RestaurantRepository {
 
 	private static final String SELECT_COLUMNS = """
-			SELECT id, name, city, price_per_hour, active
+			SELECT id, name, city, price_per_hour, active, capacity, image_url
 			FROM restaurants
 			""";
 

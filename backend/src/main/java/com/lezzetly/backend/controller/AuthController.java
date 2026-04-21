@@ -2,14 +2,21 @@ package com.lezzetly.backend.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lezzetly.backend.dto.auth.AuthResponse;
+import com.lezzetly.backend.dto.auth.CurrentUserResponse;
 import com.lezzetly.backend.dto.auth.LoginRequest;
+import com.lezzetly.backend.dto.auth.LogoutRequest;
+import com.lezzetly.backend.dto.auth.RefreshTokenRequest;
+import com.lezzetly.backend.dto.auth.RefreshTokenResponse;
 import com.lezzetly.backend.dto.auth.RegisterRequest;
+import com.lezzetly.backend.security.JwtPrincipal;
 import com.lezzetly.backend.service.AuthService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,5 +56,27 @@ public class AuthController {
 	@Operation(summary = "İşletme sahibi kaydı")
 	public ResponseEntity<AuthResponse> registerOwner(@Valid @RequestBody RegisterRequest request) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerOwner(request));
+	}
+
+	@PostMapping("/refresh")
+	@Operation(summary = "Refresh token ile erişim tokenını yenile")
+	public RefreshTokenResponse refresh(@Valid @RequestBody RefreshTokenRequest request) {
+		return authService.refresh(request.refreshToken());
+	}
+
+	@PostMapping("/logout")
+	@Operation(summary = "Refresh token'ı sonlandır")
+	public ResponseEntity<Void> logout(@Valid @RequestBody LogoutRequest request) {
+		authService.logout(request.refreshToken());
+		return ResponseEntity.noContent().build();
+	}
+
+	@GetMapping("/me")
+	@Operation(summary = "Giriş yapan kullanıcı bilgisi")
+	public CurrentUserResponse me(@AuthenticationPrincipal JwtPrincipal principal) {
+		if (principal == null) {
+			throw new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Oturum gerekli");
+		}
+		return authService.currentUser(principal.user().userId());
 	}
 }

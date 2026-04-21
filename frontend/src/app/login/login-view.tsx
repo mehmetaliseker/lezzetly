@@ -219,10 +219,17 @@ export function LoginView() {
 					password: registerForm.password,
 				},
 			});
-			setFeedback(`${response.message} Şimdi giriş yapabilirsiniz.`);
-			replaceLoginQuery({ tab: "login" });
-			setLoginForm((prev) => ({ ...prev, email: registerForm.email.trim() }));
-			setRegisterForm((prev) => ({ ...prev, password: "", confirmPassword: "" }));
+			setFeedback(response.message);
+			switch (response.user.role) {
+				case "OWNER":
+					router.push("/owner");
+					break;
+				case "CUSTOMER":
+				case "ADMIN":
+				default:
+					router.push("/profile");
+					break;
+			}
 		} catch (error) {
 			setErrorMessage(getErrorMessage(error));
 		}
