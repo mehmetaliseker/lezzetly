@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lezzetly.backend.dto.CreateReservationRequest;
+import com.lezzetly.backend.dto.CustomerReservationCardResponse;
 import com.lezzetly.backend.dto.ReservationAvailabilityResponse;
 import com.lezzetly.backend.dto.ReservationResponse;
 import com.lezzetly.backend.security.JwtPrincipal;
@@ -69,5 +70,32 @@ public class ReservationController {
 		}
 		int safeLimit = Math.min(Math.max(limit, 1), 20);
 		return reservationService.listPastForRestaurant(principal.user().userId(), restaurantId, safeLimit);
+	}
+
+	@GetMapping("/me/recent")
+	@Operation(summary = "Kullanıcının belirli restorandaki son rezervasyonları (geçmiş ve gelecek, iptal hariç)")
+	public List<ReservationResponse> listRecentForRestaurant(
+			@AuthenticationPrincipal JwtPrincipal principal,
+			@RequestParam Long restaurantId,
+			@RequestParam(defaultValue = "5") int limit
+	) {
+		if (principal == null) {
+			throw new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Oturum gerekli");
+		}
+		int safeLimit = Math.min(Math.max(limit, 1), 20);
+		return reservationService.listRecentForRestaurant(principal.user().userId(), restaurantId, safeLimit);
+	}
+
+	@GetMapping("/me")
+	@Operation(summary = "Kullanıcının tüm rezervasyonları (geçmiş ve gelecek, iptal hariç)")
+	public List<CustomerReservationCardResponse> listMine(
+			@AuthenticationPrincipal JwtPrincipal principal,
+			@RequestParam(defaultValue = "100") int limit
+	) {
+		if (principal == null) {
+			throw new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Oturum gerekli");
+		}
+		int safeLimit = Math.min(Math.max(limit, 1), 200);
+		return reservationService.listMine(principal.user().userId(), safeLimit);
 	}
 }

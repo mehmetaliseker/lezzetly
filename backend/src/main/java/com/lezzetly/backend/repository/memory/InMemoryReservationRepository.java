@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.lezzetly.backend.domain.Reservation;
+import com.lezzetly.backend.dto.CustomerReservationCardResponse;
 import com.lezzetly.backend.repository.ReservationRepository;
 
 public final class InMemoryReservationRepository implements ReservationRepository {
@@ -38,6 +39,16 @@ public final class InMemoryReservationRepository implements ReservationRepositor
 
 	@Override
 	public List<Reservation> findPastByUserAndRestaurantLimited(Long userId, Long restaurantId, int limit) {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public List<Reservation> findRecentByUserAndRestaurantLimited(Long userId, Long restaurantId, int limit) {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public List<CustomerReservationCardResponse> findMineByUserLimited(Long userId, int limit) {
 		return Collections.emptyList();
 	}
 }

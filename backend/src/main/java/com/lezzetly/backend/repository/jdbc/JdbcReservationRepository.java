@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.lezzetly.backend.domain.Reservation;
 import com.lezzetly.backend.domain.ReservationStatus;
+import com.lezzetly.backend.dto.CustomerReservationCardResponse;
 import com.lezzetly.backend.repository.ReservationRepository;
 
 @Repository
@@ -38,6 +39,30 @@ public class JdbcReservationRepository implements ReservationRepository {
 			      r.reservation_date = CURRENT_DATE
 			      AND MAX(rs.slot_hour) < EXTRACT(HOUR FROM CURRENT_TIMESTAMP)
 			    )
+			ORDER BY r.reservation_date DESC, r.id DESC
+			LIMIT ?
+			""";
+
+	private static final String FIND_RECENT_BY_USER_RESTAURANT = """
+			SELECT r.id, r.user_id, r.restaurant_id, r.table_no, r.reservation_date, r.slot_count, r.total_price, r.status,
+			       STRING_AGG(CAST(rs.slot_hour AS VARCHAR), ',' ORDER BY rs.slot_hour) AS hours_csv
+			FROM reservations r
+			JOIN reservation_slots rs ON rs.reservation_id = r.id
+			WHERE r.user_id = ? AND r.restaurant_id = ? AND r.status <> 'CANCELLED'
+			GROUP BY r.id, r.user_id, r.restaurant_id, r.table_no, r.reservation_date, r.slot_count, r.total_price, r.status
+			ORDER BY r.reservation_date DESC, r.id DESC
+			LIMIT ?
+			""";
+
+	private static final String FIND_MINE_BY_USER_LIMITED = """
+			SELECT r.id, r.user_id, r.restaurant_id, rest.name AS restaurant_name, r.table_no, r.reservation_date,
+			       r.slot_count, r.total_price, r.status,
+			       STRING_AGG(CAST(rs.slot_hour AS VARCHAR), ',' ORDER BY rs.slot_hour) AS hours_csv
+			FROM reservations r
+			JOIN restaurants rest ON rest.id = r.restaurant_id
+			JOIN reservation_slots rs ON rs.reservation_id = r.id
+			WHERE r.user_id = ? AND r.status <> 'CANCELLED'
+			GROUP BY r.id, r.user_id, r.restaurant_id, rest.name, r.table_no, r.reservation_date, r.slot_count, r.total_price, r.status
 			ORDER BY r.reservation_date DESC, r.id DESC
 			LIMIT ?
 			""";
@@ -106,6 +131,55 @@ public class JdbcReservationRepository implements ReservationRepository {
 				},
 				userId,
 				restaurantId,
+				limit
+		);
+	}
+
+	@Override
+	public List<Reservation> findRecentByUserAndRestaurantLimited(Long userId, Long restaurantId, int limit) {
+		return jdbcTemplate.query(
+				FIND_RECENT_BY_USER_RESTAURANT,
+				(rs, rowNum) -> {
+					String csv = rs.getString("hours_csv");
+					List<Integer> hours = parseHoursCsv(csv);
+					return new Reservation(
+							rs.getLong("id"),
+							rs.getLong("user_id"),
+							rs.getLong("restaurant_id"),
+							rs.getInt("table_no"),
+							rs.getObject("reservation_date", java.time.LocalDate.class),
+							hours,
+							rs.getLong("slot_count"),
+							rs.getBigDecimal("total_price"),
+							ReservationStatus.valueOf(rs.getString("status"))
+					);
+				},
+				userId,
+				restaurantId,
+				limit
+		);
+	}
+
+	@Override
+	public List<CustomerReservationCardResponse> findMineByUserLimited(Long userId, int limit) {
+		return jdbcTemplate.query(
+				FIND_MINE_BY_USER_LIMITED,
+				(rs, rowNum) -> {
+					String csv = rs.getString("hours_csv");
+					List<Integer> hours = parseHoursCsv(csv);
+					return new CustomerReservationCardResponse(
+							rs.getLong("id"),
+							rs.getLong("restaurant_id"),
+							rs.getString("restaurant_name"),
+							rs.getInt("table_no"),
+							rs.getObject("reservation_date", java.time.LocalDate.class),
+							hours,
+							rs.getLong("slot_count"),
+							rs.getBigDecimal("total_price"),
+							ReservationStatus.valueOf(rs.getString("status"))
+					);
+				},
+				userId,
 				limit
 		);
 	}

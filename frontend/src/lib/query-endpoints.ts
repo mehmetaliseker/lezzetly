@@ -33,6 +33,8 @@ export const queryEndpoints = {
 		availability: (restaurantId: number) =>
 			ReservationEndpoint.AVAILABILITY.replace("{restaurantId}", restaurantId.toString()),
 		mePast: ReservationEndpoint.ME_PAST,
+		meRecent: ReservationEndpoint.ME_RECENT,
+		meList: ReservationEndpoint.ME_LIST,
 	},
 	featureFlags: {
 		list: FeatureFlagEndpoint.LIST,

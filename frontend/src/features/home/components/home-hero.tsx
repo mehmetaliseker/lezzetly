@@ -1,6 +1,4 @@
-import Link from "next/link";
-
-import { cn } from "@/lib/cn";
+import { HomeRoleAwareCtaButtons } from "@/features/home/components/home-role-aware-cta-buttons";
 
 export function HomeHero() {
 	return (
@@ -27,22 +25,7 @@ export function HomeHero() {
 						Misafirler için şeffaf rezervasyon; işletmeler için düzenli talep yönetimi. Tek platform,
 						profesyonel deneyim.
 					</p>
-					<div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-						<Link
-							className={cn(
-								"inline-flex min-h-11 items-center justify-center rounded-md bg-stone-50 px-6 py-2.5 text-sm font-semibold text-stone-900 shadow-sm transition duration-200 hover:bg-white hover:shadow-md"
-							)}
-							href="/login?type=customer"
-						>
-							Masa bul
-						</Link>
-						<Link
-							className="inline-flex min-h-11 items-center justify-center rounded-md border border-stone-400/60 bg-transparent px-6 py-2.5 text-sm font-semibold text-stone-50 transition duration-200 hover:border-amber-200/50 hover:bg-stone-950/40"
-							href="/login?type=owner&tab=register"
-						>
-							Restoranını kaydet
-						</Link>
-					</div>
+					<HomeRoleAwareCtaButtons variant="hero" />
 				</div>
 			</div>
 		</section>

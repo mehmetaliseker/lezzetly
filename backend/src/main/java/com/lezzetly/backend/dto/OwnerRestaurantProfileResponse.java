@@ -15,6 +15,7 @@ public record OwnerRestaurantProfileResponse(
 		String openingTime,
 		String closingTime,
 		String mainImageUrl,
-		List<String> detailImageUrls
+		List<String> detailImageUrls,
+		Boolean active
 ) {
 }

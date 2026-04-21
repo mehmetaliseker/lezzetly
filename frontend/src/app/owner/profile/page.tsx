@@ -1,16 +1,19 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileUpload, type FileUploadSelectEvent } from "primereact/fileupload";
+import Image from "next/image";
+import { type FileUploadSelectEvent } from "primereact/fileupload";
 import { Tooltip } from "primereact/tooltip";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
+import { OwnerProfileImageUpload } from "@/components/owner/owner-profile-image-upload";
 import { RestaurantHourSelect } from "@/components/owner/restaurant-hour-select";
-import { ApiError } from "@/lib/api-client";
 import { PageContainer } from "@/components/layout/page-container";
 import { useToast } from "@/components/feedback/toast-center";
 import { HomeFooter } from "@/features/home/components/home-footer";
 import { queryKeys } from "@/lib/query-keys";
+import { normalizeRestaurantHourToSelectValue } from "@/lib/restaurant-hours";
+import { resolveApiMediaUrl } from "@/lib/media-url";
 import {
 	createOwnerRestaurantProfile,
 	fetchOwnerRestaurantProfile,
@@ -21,6 +24,12 @@ import {
 } from "@/services/restaurants";
 
 const MAX_IMAGE_BYTES = 1_000_000;
+
+function revokeIfBlob(url: string | null): void {
+	if (url != null && url.startsWith("blob:")) {
+		URL.revokeObjectURL(url);
+	}
+}
 
 function buildProfilePayload(formData: FormData): UpdateOwnerRestaurantProfilePayload {
 	return {
@@ -36,23 +45,60 @@ function buildProfilePayload(formData: FormData): UpdateOwnerRestaurantProfilePa
 	};
 }
 
+function profileToBaselinePayload(profile: OwnerRestaurantProfileResponse): UpdateOwnerRestaurantProfilePayload {
+	return {
+		name: (profile.name ?? "").trim(),
+		city: (profile.city ?? "").trim(),
+		description: (profile.description ?? "").trim(),
+		address: (profile.address ?? "").trim(),
+		phone: (profile.phone ?? "").trim(),
+		capacity: Number(profile.capacity ?? 1),
+		pricePerHour: Number(profile.pricePerHour ?? 0),
+		openingTime: normalizeRestaurantHourToSelectValue(profile.openingTime, 9),
+		closingTime: normalizeRestaurantHourToSelectValue(profile.closingTime, 22),
+	};
+}
+
+type PendingImageFiles = {
+	main?: File | null;
+	detail1?: File | null;
+	detail2?: File | null;
+};
+
+function payloadsEqual(
+	a: UpdateOwnerRestaurantProfilePayload,
+	b: UpdateOwnerRestaurantProfilePayload
+): boolean {
+	return (
+		a.name === b.name &&
+		a.city === b.city &&
+		a.description === b.description &&
+		a.address === b.address &&
+		a.phone === b.phone &&
+		Number(a.capacity) === Number(b.capacity) &&
+		Number(a.pricePerHour) === Number(b.pricePerHour) &&
+		a.openingTime === b.openingTime &&
+		a.closingTime === b.closingTime
+	);
+}
+
 export default function OwnerRestaurantProfilePage() {
 	const queryClient = useQueryClient();
 	const toast = useToast();
+	const formRef = useRef<HTMLFormElement>(null);
 	const [mainFile, setMainFile] = useState<File | null>(null);
 	const [detail1File, setDetail1File] = useState<File | null>(null);
 	const [detail2File, setDetail2File] = useState<File | null>(null);
-	const [mainPreview, setMainPreview] = useState<string | null>(null);
-	const [detail1Preview, setDetail1Preview] = useState<string | null>(null);
-	const [detail2Preview, setDetail2Preview] = useState<string | null>(null);
+	const [mainBlobUrl, setMainBlobUrl] = useState<string | null>(null);
+	const [detail1BlobUrl, setDetail1BlobUrl] = useState<string | null>(null);
+	const [detail2BlobUrl, setDetail2BlobUrl] = useState<string | null>(null);
+	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
 	const ownerProfileQuery = useQuery({
 		queryKey: queryKeys.owner.restaurantProfile(),
 		queryFn: fetchOwnerRestaurantProfile,
 		retry: false,
 	});
-
-	const isNotFound = ownerProfileQuery.error instanceof ApiError && ownerProfileQuery.error.status === 404;
 
 	const createMutation = useMutation({
 		mutationFn: createOwnerRestaurantProfile,
@@ -68,23 +114,80 @@ export default function OwnerRestaurantProfilePage() {
 
 	const ownerProfile: OwnerRestaurantProfileResponse | undefined = ownerProfileQuery.data;
 
-	const clearImageSelection = useCallback(() => {
-		if (mainPreview) {
-			URL.revokeObjectURL(mainPreview);
+	const lacksRestaurant = ownerProfile?.restaurantId == null;
+	const submitLabel = lacksRestaurant ? "İşletmeyi oluştur" : "İşletmeyi güncelle";
+
+	const formIdentityKey =
+		ownerProfile?.restaurantId != null
+			? `restaurant-${ownerProfile.restaurantId}-${ownerProfileQuery.dataUpdatedAt}`
+			: `new-profile-${ownerProfileQuery.dataUpdatedAt}`;
+
+	const { serverMainPreview, serverDetail1Preview, serverDetail2Preview } = useMemo(() => {
+		if (ownerProfile == null) {
+			return {
+				serverMainPreview: null as string | null,
+				serverDetail1Preview: null as string | null,
+				serverDetail2Preview: null as string | null,
+			};
 		}
-		if (detail1Preview) {
-			URL.revokeObjectURL(detail1Preview);
-		}
-		if (detail2Preview) {
-			URL.revokeObjectURL(detail2Preview);
-		}
-		setMainFile(null);
-		setDetail1File(null);
-		setDetail2File(null);
-		setMainPreview(null);
-		setDetail1Preview(null);
-		setDetail2Preview(null);
-	}, [detail1Preview, detail2Preview, mainPreview]);
+		const d1 = ownerProfile.detailImageUrls[0];
+		const d2 = ownerProfile.detailImageUrls[1];
+		return {
+			serverMainPreview:
+				ownerProfile.mainImageUrl != null && ownerProfile.mainImageUrl.length > 0
+					? resolveApiMediaUrl(ownerProfile.mainImageUrl)
+					: null,
+			serverDetail1Preview: d1 != null && d1.length > 0 ? resolveApiMediaUrl(d1) : null,
+			serverDetail2Preview: d2 != null && d2.length > 0 ? resolveApiMediaUrl(d2) : null,
+		};
+	}, [ownerProfile]);
+
+	const mainPreview = mainBlobUrl ?? serverMainPreview;
+	const detail1Preview = detail1BlobUrl ?? serverDetail1Preview;
+	const detail2Preview = detail2BlobUrl ?? serverDetail2Preview;
+
+	const updateDirtyFlag = useCallback(
+		(pendingFiles?: PendingImageFiles) => {
+			const profile =
+				queryClient.getQueryData<OwnerRestaurantProfileResponse>(queryKeys.owner.restaurantProfile()) ??
+				ownerProfile;
+			const hasRow = profile?.restaurantId != null;
+			if (!hasRow || profile == null) {
+				setHasUnsavedChanges(true);
+				return;
+			}
+			const el = formRef.current;
+			if (el == null) {
+				setHasUnsavedChanges(false);
+				return;
+			}
+			const current = buildProfilePayload(new FormData(el));
+			const baseline = profileToBaselinePayload(profile);
+			const main = pendingFiles?.main !== undefined ? pendingFiles.main : mainFile;
+			const d1 = pendingFiles?.detail1 !== undefined ? pendingFiles.detail1 : detail1File;
+			const d2 = pendingFiles?.detail2 !== undefined ? pendingFiles.detail2 : detail2File;
+			const filesChanged = main != null || d1 != null || d2 != null;
+			const textsMatch = payloadsEqual(current, baseline);
+			setHasUnsavedChanges(filesChanged || !textsMatch);
+		},
+		[detail1File, detail2File, mainFile, ownerProfile, queryClient]
+	);
+
+	const bumpFormInteraction = useCallback(() => {
+		updateDirtyFlag();
+	}, [updateDirtyFlag]);
+
+	const assignFormRef = useCallback(
+		(element: HTMLFormElement | null) => {
+			formRef.current = element;
+			if (element != null) {
+				queueMicrotask(() => {
+					updateDirtyFlag();
+				});
+			}
+		},
+		[updateDirtyFlag]
+	);
 
 	const onSelectMain = useCallback(
 		(event: FileUploadSelectEvent) => {
@@ -97,14 +200,13 @@ export default function OwnerRestaurantProfilePage() {
 				return;
 			}
 			setMainFile(file);
-			setMainPreview((previous) => {
-				if (previous) {
-					URL.revokeObjectURL(previous);
-				}
+			setMainBlobUrl((previous) => {
+				revokeIfBlob(previous);
 				return URL.createObjectURL(file);
 			});
+			updateDirtyFlag({ main: file });
 		},
-		[toast]
+		[toast, updateDirtyFlag]
 	);
 
 	const onSelectDetail1 = useCallback(
@@ -118,14 +220,13 @@ export default function OwnerRestaurantProfilePage() {
 				return;
 			}
 			setDetail1File(file);
-			setDetail1Preview((previous) => {
-				if (previous) {
-					URL.revokeObjectURL(previous);
-				}
+			setDetail1BlobUrl((previous) => {
+				revokeIfBlob(previous);
 				return URL.createObjectURL(file);
 			});
+			updateDirtyFlag({ detail1: file });
 		},
-		[toast]
+		[toast, updateDirtyFlag]
 	);
 
 	const onSelectDetail2 = useCallback(
@@ -139,14 +240,13 @@ export default function OwnerRestaurantProfilePage() {
 				return;
 			}
 			setDetail2File(file);
-			setDetail2Preview((previous) => {
-				if (previous) {
-					URL.revokeObjectURL(previous);
-				}
+			setDetail2BlobUrl((previous) => {
+				revokeIfBlob(previous);
 				return URL.createObjectURL(file);
 			});
+			updateDirtyFlag({ detail2: file });
 		},
-		[toast]
+		[toast, updateDirtyFlag]
 	);
 
 	const saveRestaurant = useCallback(
@@ -173,21 +273,16 @@ export default function OwnerRestaurantProfilePage() {
 			}
 			const hasImages = mainFile != null || detail1File != null || detail2File != null;
 
+			const snapshot = queryClient.getQueryData<OwnerRestaurantProfileResponse>(
+				queryKeys.owner.restaurantProfile()
+			);
+			const hadRestaurant = snapshot?.restaurantId != null;
+
 			try {
 				let createdInThisSubmit = false;
-				let profileExists = !isNotFound;
-				if (profileExists) {
-					try {
-						await updateMutation.mutateAsync(payload);
-					} catch (error) {
-						if (error instanceof ApiError && error.status === 404) {
-							profileExists = false;
-						} else {
-							throw error;
-						}
-					}
-				}
-				if (!profileExists) {
+				if (hadRestaurant) {
+					await updateMutation.mutateAsync(payload);
+				} else {
 					await createMutation.mutateAsync(payload);
 					createdInThisSubmit = true;
 				}
@@ -196,7 +291,25 @@ export default function OwnerRestaurantProfilePage() {
 				}
 				await queryClient.invalidateQueries({ queryKey: queryKeys.owner.restaurantProfile() });
 				await queryClient.invalidateQueries({ queryKey: queryKeys.restaurants.all });
-				clearImageSelection();
+				await queryClient.fetchQuery({
+					queryKey: queryKeys.owner.restaurantProfile(),
+					queryFn: fetchOwnerRestaurantProfile,
+				});
+				setMainFile(null);
+				setDetail1File(null);
+				setDetail2File(null);
+				setMainBlobUrl((previous) => {
+					revokeIfBlob(previous);
+					return null;
+				});
+				setDetail1BlobUrl((previous) => {
+					revokeIfBlob(previous);
+					return null;
+				});
+				setDetail2BlobUrl((previous) => {
+					revokeIfBlob(previous);
+					return null;
+				});
 				if (createdInThisSubmit) {
 					toast.showSuccess(
 						hasImages ? "İşletme oluşturuldu ve görseller yüklendi" : "İşletme profili oluşturuldu"
@@ -206,27 +319,27 @@ export default function OwnerRestaurantProfilePage() {
 						hasImages ? "İşletme güncellendi ve görseller yüklendi" : "İşletme bilgileri güncellendi"
 					);
 				}
+				updateDirtyFlag({ main: null, detail1: null, detail2: null });
 			} catch (error) {
 				const message = error instanceof Error ? error.message : "Kayıt tamamlanamadı";
 				toast.showError(message);
 			}
 		},
 		[
-			clearImageSelection,
 			createMutation,
 			detail1File,
 			detail2File,
-			isNotFound,
 			mainFile,
 			queryClient,
 			toast,
 			updateMutation,
 			uploadMutation,
+			updateDirtyFlag,
 		]
 	);
 
-	const formKey = isNotFound ? "new-restaurant" : String(ownerProfile?.restaurantId ?? "loaded");
 	const isSaving = createMutation.isPending || updateMutation.isPending || uploadMutation.isPending;
+	const submitDisabled = isSaving || (!lacksRestaurant && !hasUnsavedChanges);
 
 	if (ownerProfileQuery.isLoading) {
 		return (
@@ -245,17 +358,24 @@ export default function OwnerRestaurantProfilePage() {
 						Restoran bilgileri ve görseller. Kişisel profil ve şifre için &quot;Profili Güncelle&quot; menüsünü
 						kullanın.
 					</p>
-					{ownerProfileQuery.isError && !isNotFound ? (
+					{ownerProfileQuery.isError ? (
 						<p className="mt-4 text-sm text-red-400">İşletme profili alınamadı.</p>
 					) : null}
-					{isNotFound ? (
+					{lacksRestaurant ? (
 						<p className="mt-4 rounded-md border border-amber-700/40 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">
 							Henüz kayıtlı işletme yok. Formu doldurup alttaki düğme ile oluşturabilirsiniz; dilerseniz aynı
 							anda görsel de seçebilirsiniz.
 						</p>
 					) : null}
 
-					<form key={formKey} className="mt-6 flex flex-col gap-6" onSubmit={saveRestaurant}>
+					<form
+						key={formIdentityKey}
+						ref={assignFormRef}
+						className="mt-6 flex flex-col gap-6"
+						onChange={bumpFormInteraction}
+						onInput={bumpFormInteraction}
+						onSubmit={saveRestaurant}
+					>
 						<div className="grid gap-4 sm:grid-cols-2">
 							<label className="flex flex-col gap-2 text-sm text-stone-300">
 								Restoran adı
@@ -339,71 +459,83 @@ export default function OwnerRestaurantProfilePage() {
 						<div className="border-t border-stone-800 pt-6">
 							<h2 className="text-lg font-semibold text-stone-100">Görseller</h2>
 							<p className="mt-1 text-sm text-stone-500">
-								İsteğe bağlı. Sürükle-bırak veya seç; en fazla 1 MB, yalnızca görsel. Kayıt sırasında profil
-								ile birlikte yüklenir.
+								Soldan dosya seçin; sağdaki kutularda sunucudaki veya yeni seçtiğiniz önizleme görünür. En
+								fazla 1 MB, yalnızca görsel.
 							</p>
 							<Tooltip target=".owner-upload-choose-main" content="Ana görsel seç" position="bottom" />
 							<Tooltip target=".owner-upload-choose-d1" content="Detay 1 seç" position="bottom" />
 							<Tooltip target=".owner-upload-choose-d2" content="Detay 2 seç" position="bottom" />
 							<div className="mt-6 grid gap-6 lg:grid-cols-2">
 								<div className="space-y-4 rounded-xl border border-stone-800 bg-stone-950/60 p-4">
-									<div>
-										<p className="text-sm font-medium text-stone-200">Ana görsel</p>
-										<FileUpload
-											accept="image/*"
-											chooseOptions={{ className: "owner-upload-choose-main" }}
-											maxFileSize={MAX_IMAGE_BYTES}
-											mode="basic"
-											name="mainImage"
-											onSelect={onSelectMain}
-										/>
-									</div>
-									<div>
-										<p className="text-sm font-medium text-stone-200">Detay 1</p>
-										<FileUpload
-											accept="image/*"
-											chooseOptions={{ className: "owner-upload-choose-d1" }}
-											maxFileSize={MAX_IMAGE_BYTES}
-											mode="basic"
-											name="detailImage1"
-											onSelect={onSelectDetail1}
-										/>
-									</div>
-									<div>
-										<p className="text-sm font-medium text-stone-200">Detay 2</p>
-										<FileUpload
-											accept="image/*"
-											chooseOptions={{ className: "owner-upload-choose-d2" }}
-											maxFileSize={MAX_IMAGE_BYTES}
-											mode="basic"
-											name="detailImage2"
-											onSelect={onSelectDetail2}
-										/>
-									</div>
+									<OwnerProfileImageUpload
+										chooseClass="owner-upload-choose-main"
+										inputName="mainImage"
+										label="Ana görsel"
+										maxFileSize={MAX_IMAGE_BYTES}
+										onSelect={onSelectMain}
+									/>
+									<OwnerProfileImageUpload
+										chooseClass="owner-upload-choose-d1"
+										inputName="detailImage1"
+										label="Detay 1"
+										maxFileSize={MAX_IMAGE_BYTES}
+										onSelect={onSelectDetail1}
+									/>
+									<OwnerProfileImageUpload
+										chooseClass="owner-upload-choose-d2"
+										inputName="detailImage2"
+										label="Detay 2"
+										maxFileSize={MAX_IMAGE_BYTES}
+										onSelect={onSelectDetail2}
+									/>
 								</div>
 								<div className="grid min-h-[280px] grid-cols-2 gap-3 rounded-xl border border-stone-800 bg-stone-950/60 p-4">
-									<div className="relative col-span-2 flex min-h-[140px] items-center justify-center overflow-hidden rounded-lg border border-stone-700 bg-stone-900">
+									<div className="relative col-span-2 h-44 overflow-hidden rounded-lg border border-stone-700 bg-stone-900">
 										{mainPreview ? (
-											// eslint-disable-next-line @next/next/no-img-element
-											<img alt="Ana önizleme" className="max-h-48 object-contain" src={mainPreview} />
+											<Image
+												alt="Ana önizleme"
+												className="object-contain"
+												fill
+												sizes="(min-width: 1024px) 400px, 100vw"
+												src={mainPreview}
+												unoptimized
+											/>
 										) : (
-											<span className="text-sm text-stone-500">Ana önizleme</span>
+											<span className="flex h-full items-center justify-center text-sm text-stone-500">
+												Ana önizleme
+											</span>
 										)}
 									</div>
-									<div className="relative flex min-h-[100px] items-center justify-center overflow-hidden rounded-lg border border-stone-700 bg-stone-900">
+									<div className="relative h-32 overflow-hidden rounded-lg border border-stone-700 bg-stone-900">
 										{detail1Preview ? (
-											// eslint-disable-next-line @next/next/no-img-element
-											<img alt="Detay 1 önizleme" className="max-h-32 object-contain" src={detail1Preview} />
+											<Image
+												alt="Detay 1 önizleme"
+												className="object-contain"
+												fill
+												sizes="(min-width: 1024px) 200px, 50vw"
+												src={detail1Preview}
+												unoptimized
+											/>
 										) : (
-											<span className="text-xs text-stone-500">Detay 1</span>
+											<span className="flex h-full items-center justify-center text-xs text-stone-500">
+												Detay 1
+											</span>
 										)}
 									</div>
-									<div className="relative flex min-h-[100px] items-center justify-center overflow-hidden rounded-lg border border-stone-700 bg-stone-900">
+									<div className="relative h-32 overflow-hidden rounded-lg border border-stone-700 bg-stone-900">
 										{detail2Preview ? (
-											// eslint-disable-next-line @next/next/no-img-element
-											<img alt="Detay 2 önizleme" className="max-h-32 object-contain" src={detail2Preview} />
+											<Image
+												alt="Detay 2 önizleme"
+												className="object-contain"
+												fill
+												sizes="(min-width: 1024px) 200px, 50vw"
+												src={detail2Preview}
+												unoptimized
+											/>
 										) : (
-											<span className="text-xs text-stone-500">Detay 2</span>
+											<span className="flex h-full items-center justify-center text-xs text-stone-500">
+												Detay 2
+											</span>
 										)}
 									</div>
 								</div>
@@ -412,15 +544,11 @@ export default function OwnerRestaurantProfilePage() {
 
 						<div className="border-t border-stone-800 pt-6">
 							<button
-								className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-stone-200 px-5 py-2.5 text-sm font-semibold text-stone-900 transition hover:bg-stone-100 sm:w-auto"
-								disabled={isSaving}
+								className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-stone-200 px-5 py-2.5 text-sm font-semibold text-stone-900 transition hover:bg-stone-100 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto"
+								disabled={submitDisabled}
 								type="submit"
 							>
-								{isSaving
-									? "Kaydediliyor…"
-									: isNotFound
-										? "İşletmeyi oluştur"
-										: "İşletmeyi kaydet"}
+								{isSaving ? "Kaydediliyor…" : submitLabel}
 							</button>
 						</div>
 					</form>

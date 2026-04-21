@@ -11,4 +11,6 @@ public interface FeatureFlagService {
 	boolean isAutoVerifyEmailEnabled();
 
 	boolean isMockNotificationEnabled();
+
+	boolean isProfilePasswordVisibilityToggleEnabled();
 }

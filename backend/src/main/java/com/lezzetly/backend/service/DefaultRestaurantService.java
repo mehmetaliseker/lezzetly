@@ -83,7 +83,8 @@ public class DefaultRestaurantService implements RestaurantService {
 						null,
 						null,
 						null,
-						List.of()
+						List.of(),
+						null
 				));
 	}
 
@@ -223,6 +224,8 @@ public class DefaultRestaurantService implements RestaurantService {
 				restaurant.pricePerHour(),
 				restaurant.active(),
 				tables.size(),
+				RestaurantResponse.formatTimeOrNull(restaurant.openingTime()),
+				RestaurantResponse.formatTimeOrNull(restaurant.closingTime()),
 				mainImageUrl,
 				detailImages
 		);

@@ -8,13 +8,16 @@ public class DefaultFeatureFlagService implements FeatureFlagService {
 
 	private final boolean autoVerifyEmail;
 	private final boolean mockNotificationEnabled;
+	private final boolean profilePasswordVisibilityToggleEnabled;
 
 	public DefaultFeatureFlagService(
 			boolean autoVerifyEmail,
-			boolean mockNotificationEnabled
+			boolean mockNotificationEnabled,
+			boolean profilePasswordVisibilityToggleEnabled
 	) {
 		this.autoVerifyEmail = autoVerifyEmail;
 		this.mockNotificationEnabled = mockNotificationEnabled;
+		this.profilePasswordVisibilityToggleEnabled = profilePasswordVisibilityToggleEnabled;
 	}
 
 	@Override
@@ -29,6 +32,11 @@ public class DefaultFeatureFlagService implements FeatureFlagService {
 						"MOCK_NOTIFICATION_ENABLED",
 						mockNotificationEnabled,
 						"Geliştirme ortamı için bildirim mock modu"
+				),
+				new FeatureFlagResponse(
+						"PROFILE_PASSWORD_VISIBILITY_TOGGLE",
+						profilePasswordVisibilityToggleEnabled,
+						"Profil şifre alanlarında göster/gizle düğmesi"
 				)
 		);
 	}
@@ -41,5 +49,10 @@ public class DefaultFeatureFlagService implements FeatureFlagService {
 	@Override
 	public boolean isMockNotificationEnabled() {
 		return mockNotificationEnabled;
+	}
+
+	@Override
+	public boolean isProfilePasswordVisibilityToggleEnabled() {
+		return profilePasswordVisibilityToggleEnabled;
 	}
 }

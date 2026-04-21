@@ -13,18 +13,20 @@ export async function fetchRestaurantById(id: number): Promise<RestaurantRespons
 }
 
 export type OwnerRestaurantProfileResponse = {
-	restaurantId: number;
+	restaurantId: number | null;
 	name: string;
 	city: string;
 	description: string | null;
 	address: string | null;
 	phone: string | null;
 	capacity: number | null;
-	pricePerHour: number;
+	pricePerHour: number | null;
 	openingTime: string | null;
 	closingTime: string | null;
 	mainImageUrl: string | null;
 	detailImageUrls: string[];
+	/** Müşteri listesinde görünür mü; kayıt yokken null. */
+	active: boolean | null;
 };
 
 export type UpdateOwnerRestaurantProfilePayload = {

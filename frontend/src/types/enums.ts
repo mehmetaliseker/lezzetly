@@ -57,6 +57,7 @@ export enum AppRoute {
 	REGISTER = "/register",
 	RESTAURANTS = "/restaurants",
 	RESERVATION = "/rezervasyon",
+	MY_RESERVATIONS = "/rezervasyonlarim",
 	PROFILE = "/profile",
 	OWNER_PROFILE = "/owner/profile",
 	OWNER_ACCOUNT = "/owner/account",
@@ -86,6 +87,8 @@ export enum ReservationEndpoint {
 	CREATE = "/api/reservations",
 	AVAILABILITY = "/api/reservations/availability/{restaurantId}",
 	ME_PAST = "/api/reservations/me/past",
+	ME_RECENT = "/api/reservations/me/recent",
+	ME_LIST = "/api/reservations/me",
 }
 
 export enum FeatureFlagEndpoint {

@@ -29,6 +29,9 @@ export const queryKeys = {
 			["reservations", queryEndpoints.reservations.availability(restaurantId), date] as const,
 		pastForRestaurant: (restaurantId: number, limit: number) =>
 			["reservations", "past", restaurantId, limit] as const,
+		recentForRestaurant: (restaurantId: number, limit: number) =>
+			["reservations", "recent", restaurantId, limit] as const,
+		mine: (limit: number) => ["reservations", "mine", limit] as const,
 	},
 	reference: {
 		root: referenceRoot,

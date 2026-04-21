@@ -17,6 +17,7 @@ import com.lezzetly.backend.domain.Reservation;
 import com.lezzetly.backend.domain.ReservationStatus;
 import com.lezzetly.backend.domain.Restaurant;
 import com.lezzetly.backend.dto.CreateReservationRequest;
+import com.lezzetly.backend.dto.CustomerReservationCardResponse;
 import com.lezzetly.backend.dto.ReservationAvailabilityResponse;
 import com.lezzetly.backend.dto.ReservationResponse;
 import com.lezzetly.backend.dto.TableAvailabilityResponse;
@@ -106,6 +107,17 @@ public class DefaultReservationService implements ReservationService {
 	public List<ReservationResponse> listPastForRestaurant(Long userId, Long restaurantId, int limit) {
 		List<Reservation> rows = reservationRepository.findPastByUserAndRestaurantLimited(userId, restaurantId, limit);
 		return rows.stream().map(DefaultReservationService::toResponse).collect(Collectors.toList());
+	}
+
+	@Override
+	public List<ReservationResponse> listRecentForRestaurant(Long userId, Long restaurantId, int limit) {
+		List<Reservation> rows = reservationRepository.findRecentByUserAndRestaurantLimited(userId, restaurantId, limit);
+		return rows.stream().map(DefaultReservationService::toResponse).collect(Collectors.toList());
+	}
+
+	@Override
+	public List<CustomerReservationCardResponse> listMine(Long userId, int limit) {
+		return reservationRepository.findMineByUserLimited(userId, limit);
 	}
 
 	private void applyBusinessHourRules(Restaurant restaurant, LocalDate date, Set<Integer> disabledHours) {

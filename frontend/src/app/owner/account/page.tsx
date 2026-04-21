@@ -3,10 +3,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { ProfilePasswordInputs } from "@/components/auth/profile-password-inputs";
 import { useToast } from "@/components/feedback/toast-center";
 import { PageContainer } from "@/components/layout/page-container";
 import { HomeFooter } from "@/features/home/components/home-footer";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useFeatureFlags } from "@/hooks/use-feature-flags";
+import { FEATURE_FLAG_PROFILE_PASSWORD_VISIBILITY, isFeatureEnabled } from "@/lib/feature-flags";
 import { queryKeys } from "@/lib/query-keys";
 import { updateMe, updatePassword } from "@/services/auth";
 import { parseUserRolePath, UserRolePath } from "@/types/enums";
@@ -39,6 +42,11 @@ export default function OwnerAccountPage() {
 	});
 
 	const user = currentUserQuery.data;
+	const featureFlagsQuery = useFeatureFlags();
+	const passwordVisibilityToggle = isFeatureEnabled(
+		featureFlagsQuery.data,
+		FEATURE_FLAG_PROFILE_PASSWORD_VISIBILITY
+	);
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col bg-stone-950">
@@ -167,22 +175,7 @@ export default function OwnerAccountPage() {
 						}}
 					>
 						<h2 className="text-lg font-semibold text-stone-100 sm:col-span-2">Şifre güncelle</h2>
-						<label className="flex flex-col gap-2 text-sm text-stone-300">
-							Mevcut şifre
-							<input
-								className="rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-stone-100"
-								name="currentPassword"
-								type="password"
-							/>
-						</label>
-						<label className="flex flex-col gap-2 text-sm text-stone-300">
-							Yeni şifre
-							<input
-								className="rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-stone-100"
-								name="newPassword"
-								type="password"
-							/>
-						</label>
+						<ProfilePasswordInputs visibilityToggleEnabled={passwordVisibilityToggle} />
 						<div className="sm:col-span-2">
 							<button
 								className="inline-flex min-h-10 items-center justify-center rounded-md border border-stone-600 bg-stone-900 px-5 py-2 text-sm font-semibold text-stone-100 transition hover:bg-stone-800"

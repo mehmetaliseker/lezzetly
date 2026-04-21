@@ -31,7 +31,7 @@ public class JdbcOwnerRestaurantProfileRepository implements OwnerRestaurantProf
 	private static final DateTimeFormatter TIME_FORMAT_H_MM_SS = DateTimeFormatter.ofPattern("H:mm:ss");
 
 	private static final String FIND_BY_OWNER = """
-			SELECT id, name, city, description, address, phone, capacity, price_per_hour, opening_time, closing_time, image_url
+			SELECT id, name, city, description, address, phone, capacity, price_per_hour, opening_time, closing_time, image_url, active
 			FROM restaurants
 			WHERE owner_user_id = ?
 			LIMIT 1
@@ -88,6 +88,7 @@ public class JdbcOwnerRestaurantProfileRepository implements OwnerRestaurantProf
 		String closingStr = closing != null ? TIME_FORMAT_HH_MM.format(closing.toLocalTime()) : null;
 		BigDecimal pricePerHour = rs.getBigDecimal("price_per_hour");
 		String legacyMain = rs.getString("image_url");
+		Boolean active = (Boolean) rs.getObject("active");
 		return new OwnerRestaurantProfileResponse(
 				restaurantId,
 				rs.getString("name"),
@@ -100,7 +101,8 @@ public class JdbcOwnerRestaurantProfileRepository implements OwnerRestaurantProf
 				openingStr,
 				closingStr,
 				buildMainImageUrl(restaurantId, legacyMain),
-				buildDetailImageUrls(restaurantId)
+				buildDetailImageUrls(restaurantId),
+				active
 		);
 	}
 

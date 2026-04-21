@@ -66,9 +66,10 @@ public class ApplicationBeans {
 	@Bean
 	public FeatureFlagService featureFlagService(
 			@Value("${app.feature-flags.auto-verify-email:true}") boolean autoVerifyEmail,
-			@Value("${app.feature-flags.mock-notification-enabled:false}") boolean mockNotificationEnabled
+			@Value("${app.feature-flags.mock-notification-enabled:false}") boolean mockNotificationEnabled,
+			@Value("${app.feature-flags.profile-password-visibility-toggle:false}") boolean profilePasswordVisibilityToggle
 	) {
-		return new DefaultFeatureFlagService(autoVerifyEmail, mockNotificationEnabled);
+		return new DefaultFeatureFlagService(autoVerifyEmail, mockNotificationEnabled, profilePasswordVisibilityToggle);
 	}
 
 	@Bean

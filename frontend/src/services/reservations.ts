@@ -20,6 +20,18 @@ export type ReservationResponse = {
 	status: string;
 };
 
+export type CustomerReservationCardResponse = {
+	id: number;
+	restaurantId: number;
+	restaurantName: string;
+	tableNo: number;
+	date: string;
+	selectedHours: number[];
+	slotCount: number;
+	totalPrice: number;
+	status: string;
+};
+
 export type ReservationAvailabilityResponse = {
 	restaurantId: number;
 	date: string;
@@ -57,4 +69,17 @@ export async function fetchPastReservationsForRestaurant(
 	return apiJson<ReservationResponse[]>(
 		`${queryEndpoints.reservations.mePast}?restaurantId=${restaurantId}&limit=${limit}`
 	);
+}
+
+export async function fetchRecentReservationsForRestaurant(
+	restaurantId: number,
+	limit: number = 5
+): Promise<ReservationResponse[]> {
+	return apiJson<ReservationResponse[]>(
+		`${queryEndpoints.reservations.meRecent}?restaurantId=${restaurantId}&limit=${limit}`
+	);
+}
+
+export async function fetchMyReservations(limit: number = 100): Promise<CustomerReservationCardResponse[]> {
+	return apiJson<CustomerReservationCardResponse[]>(`${queryEndpoints.reservations.meList}?limit=${limit}`);
 }

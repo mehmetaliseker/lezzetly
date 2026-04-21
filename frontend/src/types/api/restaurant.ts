@@ -6,6 +6,8 @@ export type RestaurantResponse = {
 	pricePerHour: number;
 	active: boolean;
 	tableCount: number;
+	openingTime: string | null;
+	closingTime: string | null;
 	mainImageUrl: string | null;
 	detailImageUrls: string[];
 };

@@ -65,31 +65,32 @@ export function SiteHeader() {
 					aria-label="Ana menü"
 					className="flex items-center gap-1 sm:gap-6"
 				>
-					{shouldHideMenuLinks ? null : (
+					{isCustomer ? (
+						<div className="flex flex-wrap items-center gap-4 sm:gap-8">
+							<Link className={navMuted} href={AppRoute.RESERVATION}>
+								Rezervasyon
+							</Link>
+							<Link className={navMuted} href={AppRoute.MY_RESERVATIONS}>
+								Rezervasyonlarım
+							</Link>
+						</div>
+					) : isOwner ? (
+						<div className="flex flex-wrap items-center gap-4 sm:gap-8">
+							<Link className={navMuted} href={AppRoute.OWNER_PROFILE}>
+								İşletme Profili
+							</Link>
+							<Link className={navMuted} href={AppRoute.OWNER_ACCOUNT}>
+								Kişisel Profil
+							</Link>
+						</div>
+					) : shouldHideMenuLinks ? null : (
 						<div className="hidden items-center gap-8 md:flex">
-							{isCustomer ? (
-								<Link className={navMuted} href={AppRoute.RESERVATION}>
-									Rezervasyon
-								</Link>
-							) : isOwner ? (
-								<>
-									<Link className={navMuted} href={AppRoute.OWNER_PROFILE}>
-										İşletme Profili
-									</Link>
-									<Link className={navMuted} href={AppRoute.OWNER_ACCOUNT}>
-										Kişisel Profil
-									</Link>
-								</>
-							) : (
-								<>
-									<Link className={navMuted} href={AppRoute.HOME}>
-										Ana sayfa
-									</Link>
-									<Link className={navMuted} href={AppRoute.RESTAURANTS}>
-										Restoranlar
-									</Link>
-								</>
-							)}
+							<Link className={navMuted} href={AppRoute.HOME}>
+								Ana sayfa
+							</Link>
+							<Link className={navMuted} href={AppRoute.RESTAURANTS}>
+								Restoranlar
+							</Link>
 						</div>
 					)}
 					<div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
