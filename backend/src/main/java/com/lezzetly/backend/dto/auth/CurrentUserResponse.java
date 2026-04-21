@@ -5,6 +5,7 @@ public record CurrentUserResponse(
 		String firstName,
 		String lastName,
 		String email,
+		String phone,
 		String role
 ) {
 }

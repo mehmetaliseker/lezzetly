@@ -1,6 +1,7 @@
 package com.lezzetly.backend.controller;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,5 +55,19 @@ public class ReservationController {
 			@RequestParam LocalDate date
 	) {
 		return reservationService.availability(restaurantId, date);
+	}
+
+	@GetMapping("/me/past")
+	@Operation(summary = "Kullanıcının belirli restorandaki geçmiş rezervasyonları")
+	public List<ReservationResponse> listPastForRestaurant(
+			@AuthenticationPrincipal JwtPrincipal principal,
+			@RequestParam Long restaurantId,
+			@RequestParam(defaultValue = "5") int limit
+	) {
+		if (principal == null) {
+			throw new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Oturum gerekli");
+		}
+		int safeLimit = Math.min(Math.max(limit, 1), 20);
+		return reservationService.listPastForRestaurant(principal.user().userId(), restaurantId, safeLimit);
 	}
 }

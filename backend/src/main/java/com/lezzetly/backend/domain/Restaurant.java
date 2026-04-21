@@ -1,6 +1,7 @@
 package com.lezzetly.backend.domain;
 
 import java.math.BigDecimal;
+import java.time.LocalTime;
 
 public record Restaurant(
 		Long id,
@@ -9,6 +10,8 @@ public record Restaurant(
 		BigDecimal pricePerHour,
 		boolean active,
 		Integer capacity,
-		String imageUrl
+		String imageUrl,
+		LocalTime openingTime,
+		LocalTime closingTime
 ) {
 }

@@ -17,6 +17,7 @@ public final class UserRowMapper implements RowMapper<User> {
 				rs.getString("first_name"),
 				rs.getString("last_name"),
 				rs.getString("email"),
+				rs.getString("phone"),
 				rs.getString("password_hash"),
 				UserRole.valueOf(rs.getString("role")),
 				rs.getBoolean("active"),

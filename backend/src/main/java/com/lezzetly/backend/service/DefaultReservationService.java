@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.lezzetly.backend.domain.Reservation;
 import com.lezzetly.backend.domain.ReservationStatus;
 import com.lezzetly.backend.domain.Restaurant;
@@ -22,8 +24,6 @@ import com.lezzetly.backend.repository.ReservationRepository;
 import com.lezzetly.backend.repository.ReservationSlotRepository;
 import com.lezzetly.backend.repository.RestaurantRepository;
 import com.lezzetly.backend.repository.RestaurantTableRepository;
-
-import org.springframework.transaction.annotation.Transactional;
 
 public class DefaultReservationService implements ReservationService {
 
@@ -56,7 +56,7 @@ public class DefaultReservationService implements ReservationService {
 		}
 
 		List<Integer> selectedHours = normalizeHours(request.selectedHours());
-		validatePastHours(request.date(), selectedHours);
+		validatePastAndBusinessHours(restaurant, request.date(), selectedHours);
 		if (reservationSlotRepository.hasAnyConflict(restaurant.id(), request.date(), request.tableNo(), selectedHours)) {
 			throw new IllegalArgumentException("Seçilen saatlerden bazıları dolu");
 		}
@@ -89,22 +89,74 @@ public class DefaultReservationService implements ReservationService {
 
 	@Override
 	public ReservationAvailabilityResponse availability(Long restaurantId, LocalDate date) {
-		restaurantRepository.findById(restaurantId)
+		Restaurant restaurant = restaurantRepository.findById(restaurantId)
 				.filter(Restaurant::active)
 				.orElseThrow(() -> new IllegalArgumentException("Restoran bulunamadı veya pasif: " + restaurantId));
 		List<Integer> tables = restaurantTableRepository.findActiveTableNumbers(restaurantId);
 		List<TableAvailabilityResponse> availability = new ArrayList<>();
 		for (Integer tableNo : tables) {
 			Set<Integer> disabledHours = new LinkedHashSet<>(reservationSlotRepository.findReservedHours(restaurantId, date, tableNo));
-			if (LocalDate.now().isEqual(date)) {
-				int currentHour = LocalTime.now().getHour();
-				for (int hour = 0; hour < currentHour; hour++) {
-					disabledHours.add(hour);
-				}
-			}
+			applyBusinessHourRules(restaurant, date, disabledHours);
 			availability.add(new TableAvailabilityResponse(tableNo, disabledHours.stream().sorted().collect(Collectors.toList())));
 		}
 		return new ReservationAvailabilityResponse(restaurantId, date, availability);
+	}
+
+	@Override
+	public List<ReservationResponse> listPastForRestaurant(Long userId, Long restaurantId, int limit) {
+		List<Reservation> rows = reservationRepository.findPastByUserAndRestaurantLimited(userId, restaurantId, limit);
+		return rows.stream().map(DefaultReservationService::toResponse).collect(Collectors.toList());
+	}
+
+	private void applyBusinessHourRules(Restaurant restaurant, LocalDate date, Set<Integer> disabledHours) {
+		int firstHour = firstBookableHourInclusive(restaurant.openingTime());
+		int lastHour = lastBookableHourInclusive(restaurant.closingTime());
+		for (int hour = 0; hour < 24; hour++) {
+			if (hour < firstHour || hour > lastHour) {
+				disabledHours.add(hour);
+			}
+		}
+		if (LocalDate.now().isEqual(date)) {
+			int currentHour = LocalDateTime.now().getHour();
+			for (int hour = 0; hour <= currentHour; hour++) {
+				disabledHours.add(hour);
+			}
+		}
+	}
+
+	private void validatePastAndBusinessHours(Restaurant restaurant, LocalDate date, List<Integer> selectedHours) {
+		int firstHour = firstBookableHourInclusive(restaurant.openingTime());
+		int lastHour = lastBookableHourInclusive(restaurant.closingTime());
+		for (Integer selectedHour : selectedHours) {
+			if (selectedHour < firstHour || selectedHour > lastHour) {
+				throw new IllegalArgumentException("Seçilen saatler işletme açılış/kapanış saatleri dışında");
+			}
+		}
+		if (LocalDate.now().isEqual(date)) {
+			int currentHour = LocalDateTime.now().getHour();
+			for (Integer selectedHour : selectedHours) {
+				if (selectedHour <= currentHour) {
+					throw new IllegalArgumentException("Bugün için yalnızca bir sonraki saatten itibaren rezervasyon alınabilir");
+				}
+			}
+		}
+	}
+
+	private static int firstBookableHourInclusive(LocalTime openingTime) {
+		if (openingTime == null) {
+			return 0;
+		}
+		return openingTime.getHour();
+	}
+
+	private static int lastBookableHourInclusive(LocalTime closingTime) {
+		if (closingTime == null) {
+			return 23;
+		}
+		if (closingTime.getMinute() == 0 && closingTime.getSecond() == 0 && closingTime.getNano() == 0) {
+			return Math.max(0, closingTime.getHour() - 1);
+		}
+		return Math.max(0, closingTime.getHour() - 1);
 	}
 
 	private static ReservationResponse toResponse(Reservation reservation) {
@@ -130,17 +182,5 @@ public class DefaultReservationService implements ReservationService {
 			throw new IllegalArgumentException("En az bir saat seçilmelidir");
 		}
 		return uniqueHours;
-	}
-
-	private static void validatePastHours(LocalDate date, List<Integer> selectedHours) {
-		if (!LocalDate.now().isEqual(date)) {
-			return;
-		}
-		int currentHour = LocalDateTime.now().getHour();
-		for (Integer selectedHour : selectedHours) {
-			if (selectedHour < currentHour) {
-				throw new IllegalArgumentException("Bugün için geçmiş saat seçilemez");
-			}
-		}
 	}
 }

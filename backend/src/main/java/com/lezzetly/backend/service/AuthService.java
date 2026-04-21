@@ -5,6 +5,8 @@ import com.lezzetly.backend.dto.auth.CurrentUserResponse;
 import com.lezzetly.backend.dto.auth.LoginRequest;
 import com.lezzetly.backend.dto.auth.RefreshTokenResponse;
 import com.lezzetly.backend.dto.auth.RegisterRequest;
+import com.lezzetly.backend.dto.auth.UpdatePasswordRequest;
+import com.lezzetly.backend.dto.auth.UpdateProfileRequest;
 
 public interface AuthService {
 
@@ -21,4 +23,8 @@ public interface AuthService {
 	void logout(String refreshToken);
 
 	CurrentUserResponse currentUser(Long userId);
+
+	CurrentUserResponse updateCurrentUser(Long userId, UpdateProfileRequest request);
+
+	void updatePassword(Long userId, UpdatePasswordRequest request);
 }

@@ -17,6 +17,7 @@ export function useLogoutMutation() {
 		},
 		onSettled: () => {
 			clearTokens();
+			queryClient.setQueryData(queryKeys.auth.session(), null);
 			queryClient.setQueryData(queryKeys.auth.currentUser(), null);
 		},
 	});

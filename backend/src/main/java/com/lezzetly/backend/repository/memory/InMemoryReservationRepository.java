@@ -1,9 +1,10 @@
 package com.lezzetly.backend.repository.memory;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Collections;
 import java.util.List;
 import java.time.LocalDate;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.lezzetly.backend.domain.Reservation;
 import com.lezzetly.backend.repository.ReservationRepository;
@@ -33,5 +34,10 @@ public final class InMemoryReservationRepository implements ReservationRepositor
 
 	@Override
 	public void saveSlots(Long reservationId, Long restaurantId, LocalDate date, Integer tableNo, List<Integer> selectedHours) {
+	}
+
+	@Override
+	public List<Reservation> findPastByUserAndRestaurantLimited(Long userId, Long restaurantId, int limit) {
+		return Collections.emptyList();
 	}
 }

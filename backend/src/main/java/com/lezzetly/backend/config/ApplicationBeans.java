@@ -2,6 +2,7 @@ package com.lezzetly.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -10,6 +11,8 @@ import com.lezzetly.backend.repository.RestaurantRepository;
 import com.lezzetly.backend.repository.RestaurantImageRepository;
 import com.lezzetly.backend.repository.RestaurantTableRepository;
 import com.lezzetly.backend.repository.ReservationSlotRepository;
+import com.lezzetly.backend.repository.OwnerRestaurantProfileRepository;
+import com.lezzetly.backend.repository.RestaurantBinaryImageRepository;
 import com.lezzetly.backend.repository.RefreshTokenRepository;
 import com.lezzetly.backend.repository.UserRepository;
 import com.lezzetly.backend.security.JwtService;
@@ -30,12 +33,18 @@ public class ApplicationBeans {
 	public RestaurantService restaurantService(
 			RestaurantRepository restaurantRepository,
 			RestaurantTableRepository restaurantTableRepository,
-			RestaurantImageRepository restaurantImageRepository
+			RestaurantImageRepository restaurantImageRepository,
+			RestaurantBinaryImageRepository restaurantBinaryImageRepository,
+			OwnerRestaurantProfileRepository ownerRestaurantProfileRepository,
+			UserRepository userRepository
 	) {
 		return new DefaultRestaurantService(
 				restaurantRepository,
 				restaurantTableRepository,
-				restaurantImageRepository
+				restaurantImageRepository,
+				restaurantBinaryImageRepository,
+				ownerRestaurantProfileRepository,
+				userRepository
 		);
 	}
 
@@ -55,8 +64,11 @@ public class ApplicationBeans {
 	}
 
 	@Bean
-	public FeatureFlagService featureFlagService() {
-		return new DefaultFeatureFlagService();
+	public FeatureFlagService featureFlagService(
+			@Value("${app.feature-flags.auto-verify-email:true}") boolean autoVerifyEmail,
+			@Value("${app.feature-flags.mock-notification-enabled:false}") boolean mockNotificationEnabled
+	) {
+		return new DefaultFeatureFlagService(autoVerifyEmail, mockNotificationEnabled);
 	}
 
 	@Bean
@@ -70,14 +82,16 @@ public class ApplicationBeans {
 			PasswordEncoder passwordEncoder,
 			JwtService jwtService,
 			TokenHashService tokenHashService,
-			RefreshTokenRepository refreshTokenRepository
+			RefreshTokenRepository refreshTokenRepository,
+			FeatureFlagService featureFlagService
 	) {
 		return new DefaultAuthService(
 				userRepository,
 				passwordEncoder,
 				jwtService,
 				tokenHashService,
-				refreshTokenRepository
+				refreshTokenRepository,
+				featureFlagService
 		);
 	}
 }

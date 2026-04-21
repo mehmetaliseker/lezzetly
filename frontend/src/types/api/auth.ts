@@ -1,10 +1,13 @@
-export type AuthRole = "CUSTOMER" | "OWNER" | "ADMIN";
+import type { UserRoleApiValue } from "@/types/enums";
+
+export type AuthRole = UserRoleApiValue;
 
 export type AuthUser = {
 	id: number;
 	firstName: string;
 	lastName: string;
 	email: string;
+	phone: string | null;
 	role: AuthRole;
 };
 
@@ -27,6 +30,13 @@ export type RefreshTokenResponse = {
 };
 
 export type CurrentUserResponse = AuthUser;
+
+export type UpdateProfilePayload = {
+	firstName: string;
+	lastName: string;
+	email: string;
+	phone: string;
+};
 
 export type LoginPayload = {
 	email: string;

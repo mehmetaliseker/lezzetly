@@ -13,4 +13,8 @@ public interface UserRepository {
 	boolean existsByEmail(String email);
 
 	User save(User user);
+
+	User updateProfile(Long userId, String firstName, String lastName, String email, String phone);
+
+	void updatePasswordHash(Long userId, String passwordHash);
 }

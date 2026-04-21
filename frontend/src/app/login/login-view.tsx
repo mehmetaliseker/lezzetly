@@ -8,6 +8,7 @@ import { useCallback, useState } from "react";
 import { Tabs } from "@heroui/react";
 
 import SmoothImageSwap from "@/components/SmoothImageSwap";
+import { useToast } from "@/components/feedback/toast-center";
 import { PageContainer } from "@/components/layout/page-container";
 import { useLoginMutation, useRegisterMutation } from "@/hooks/use-auth";
 import { ApiError } from "@/lib/api-client";
@@ -130,6 +131,7 @@ function getErrorMessage(error: unknown): string {
 export function LoginView() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
+	const toast = useToast();
 	const loginMutation = useLoginMutation();
 	const registerMutation = useRegisterMutation();
 
@@ -148,9 +150,6 @@ export function LoginView() {
 		[router, searchParams]
 	);
 
-	const [feedback, setFeedback] = useState<string>("");
-	const [errorMessage, setErrorMessage] = useState<string>("");
-
 	const [loginForm, setLoginForm] = useState<LoginFormState>({ email: "", password: "" });
 	const [registerForm, setRegisterForm] = useState<RegisterFormState>({
 		firstName: "",
@@ -166,15 +165,11 @@ export function LoginView() {
 		if (isBusy) {
 			return;
 		}
-		setErrorMessage("");
-		setFeedback("");
 		replaceLoginQuery({ type: accountType === "customer" ? "owner" : "customer" });
 	};
 
 	const handleLoginSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		setErrorMessage("");
-		setFeedback("");
 		try {
 			const response = await loginMutation.mutateAsync({
 				accountType,
@@ -183,29 +178,26 @@ export function LoginView() {
 					password: loginForm.password,
 				},
 			});
-			setFeedback(response.message);
+			toast.showSuccess(response.message);
 			switch (response.user.role) {
 				case "OWNER":
-					router.push("/owner");
+					router.push("/owner/welcome");
 					break;
 				case "CUSTOMER":
 				case "ADMIN":
 				default:
-					router.push("/profile");
+					router.push("/welcome");
 					break;
 			}
 		} catch (error) {
-			setErrorMessage(getErrorMessage(error));
+			toast.showError(getErrorMessage(error));
 		}
 	};
 
 	const handleRegisterSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		setErrorMessage("");
-		setFeedback("");
-
 		if (registerForm.password !== registerForm.confirmPassword) {
-			setErrorMessage("Şifre tekrar alanı şifre ile aynı olmalıdır");
+			toast.showError("Şifre tekrar alanı şifre ile aynı olmalıdır");
 			return;
 		}
 
@@ -219,19 +211,19 @@ export function LoginView() {
 					password: registerForm.password,
 				},
 			});
-			setFeedback(response.message);
+			toast.showSuccess(response.message);
 			switch (response.user.role) {
 				case "OWNER":
-					router.push("/owner");
+					router.push("/owner/welcome");
 					break;
 				case "CUSTOMER":
 				case "ADMIN":
 				default:
-					router.push("/profile");
+					router.push("/welcome");
 					break;
 			}
 		} catch (error) {
-			setErrorMessage(getErrorMessage(error));
+			toast.showError(getErrorMessage(error));
 		}
 	};
 
@@ -305,8 +297,6 @@ export function LoginView() {
 												return;
 											}
 											replaceLoginQuery({ tab: String(key) as FormMode });
-											setErrorMessage("");
-											setFeedback("");
 										}}
 									>
 										<Tabs.ListContainer>
@@ -380,12 +370,6 @@ export function LoginView() {
 												</Box>
 											</div>
 											<div className="shrink-0 border-t border-stone-800 pt-4">
-												{errorMessage && mode === "login" ? (
-													<p className="mb-3 text-sm font-medium text-red-400">{errorMessage}</p>
-												) : null}
-												{feedback && mode === "login" ? (
-													<p className="mb-3 text-sm font-medium text-emerald-400">{feedback}</p>
-												) : null}
 												<button
 													className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-stone-200 px-5 py-2.5 text-sm font-semibold text-stone-900 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-60"
 													disabled={isBusy}
@@ -492,12 +476,6 @@ export function LoginView() {
 												</Box>
 											</div>
 											<div className="shrink-0 border-t border-stone-800 pt-4">
-												{errorMessage && mode === "register" ? (
-													<p className="mb-3 text-sm font-medium text-red-400">{errorMessage}</p>
-												) : null}
-												{feedback && mode === "register" ? (
-													<p className="mb-3 text-sm font-medium text-emerald-400">{feedback}</p>
-												) : null}
 												<button
 													className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-stone-200 px-5 py-2.5 text-sm font-semibold text-stone-900 transition hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-60"
 													disabled={isBusy}

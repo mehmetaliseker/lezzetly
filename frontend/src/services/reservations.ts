@@ -1,4 +1,5 @@
 import { apiJson } from "@/lib/api-client";
+import { queryEndpoints } from "@/lib/query-endpoints";
 
 export type CreateReservationPayload = {
 	restaurantId: number;
@@ -31,7 +32,7 @@ export type ReservationAvailabilityResponse = {
 export async function createReservation(
 	payload: CreateReservationPayload
 ): Promise<ReservationResponse> {
-	return apiJson<ReservationResponse>("/api/reservations", {
+	return apiJson<ReservationResponse>(queryEndpoints.reservations.create, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -45,6 +46,15 @@ export async function fetchReservationAvailability(
 	date: string
 ): Promise<ReservationAvailabilityResponse> {
 	return apiJson<ReservationAvailabilityResponse>(
-		`/api/reservations/availability/${restaurantId}?date=${date}`
+		`${queryEndpoints.reservations.availability(restaurantId)}?date=${encodeURIComponent(date)}`
+	);
+}
+
+export async function fetchPastReservationsForRestaurant(
+	restaurantId: number,
+	limit: number = 5
+): Promise<ReservationResponse[]> {
+	return apiJson<ReservationResponse[]>(
+		`${queryEndpoints.reservations.mePast}?restaurantId=${restaurantId}&limit=${limit}`
 	);
 }

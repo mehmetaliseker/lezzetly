@@ -13,7 +13,7 @@ import com.lezzetly.backend.repository.UserRepository;
 public class JdbcUserRepository implements UserRepository {
 
 	private static final String SELECT_COLUMNS = """
-			SELECT id, first_name, last_name, email, password_hash, role, active, created_at, updated_at
+			SELECT id, first_name, last_name, email, phone, password_hash, role, active, created_at, updated_at
 			FROM users
 			""";
 
@@ -29,14 +29,26 @@ public class JdbcUserRepository implements UserRepository {
 			""";
 
 	private static final String INSERT = """
-			INSERT INTO users (first_name, last_name, email, password_hash, role, active)
-			VALUES (?, ?, ?, ?, ?, ?)
+			INSERT INTO users (first_name, last_name, email, phone, password_hash, role, active)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
 			RETURNING id
 			""";
 
 	private static final String FIND_BY_ID = SELECT_COLUMNS + """
 			WHERE id = ?
 			LIMIT 1
+			""";
+
+	private static final String UPDATE_PROFILE = """
+			UPDATE users
+			SET first_name = ?, last_name = ?, email = ?, phone = ?, updated_at = NOW()
+			WHERE id = ?
+			""";
+
+	private static final String UPDATE_PASSWORD = """
+			UPDATE users
+			SET password_hash = ?, updated_at = NOW()
+			WHERE id = ?
 			""";
 
 	private final JdbcTemplate jdbcTemplate;
@@ -73,6 +85,7 @@ public class JdbcUserRepository implements UserRepository {
 				user.firstName(),
 				user.lastName(),
 				user.email(),
+				user.phone(),
 				user.passwordHash(),
 				user.role().name(),
 				user.active()
@@ -86,11 +99,29 @@ public class JdbcUserRepository implements UserRepository {
 				user.firstName(),
 				user.lastName(),
 				user.email(),
+				user.phone(),
 				user.passwordHash(),
 				user.role(),
 				user.active(),
 				null,
 				null
 		);
+	}
+
+	@Override
+	public User updateProfile(Long userId, String firstName, String lastName, String email, String phone) {
+		int affected = jdbcTemplate.update(UPDATE_PROFILE, firstName, lastName, email, phone, userId);
+		if (affected == 0) {
+			throw new IllegalStateException("Kullanıcı güncellenemedi");
+		}
+		return findById(userId).orElseThrow(() -> new IllegalStateException("Güncellenen kullanıcı bulunamadı"));
+	}
+
+	@Override
+	public void updatePasswordHash(Long userId, String passwordHash) {
+		int affected = jdbcTemplate.update(UPDATE_PASSWORD, passwordHash, userId);
+		if (affected == 0) {
+			throw new IllegalStateException("Kullanıcı şifresi güncellenemedi");
+		}
 	}
 }

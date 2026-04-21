@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,8 @@ import com.lezzetly.backend.dto.auth.LogoutRequest;
 import com.lezzetly.backend.dto.auth.RefreshTokenRequest;
 import com.lezzetly.backend.dto.auth.RefreshTokenResponse;
 import com.lezzetly.backend.dto.auth.RegisterRequest;
+import com.lezzetly.backend.dto.auth.UpdatePasswordRequest;
+import com.lezzetly.backend.dto.auth.UpdateProfileRequest;
 import com.lezzetly.backend.security.JwtPrincipal;
 import com.lezzetly.backend.service.AuthService;
 
@@ -78,5 +81,30 @@ public class AuthController {
 			throw new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Oturum gerekli");
 		}
 		return authService.currentUser(principal.user().userId());
+	}
+
+	@PatchMapping("/me")
+	@Operation(summary = "Giriş yapan kullanıcı profilini güncelle")
+	public CurrentUserResponse updateMe(
+			@AuthenticationPrincipal JwtPrincipal principal,
+			@Valid @RequestBody UpdateProfileRequest request
+	) {
+		if (principal == null) {
+			throw new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Oturum gerekli");
+		}
+		return authService.updateCurrentUser(principal.user().userId(), request);
+	}
+
+	@PostMapping("/me/password")
+	@Operation(summary = "Giriş yapan kullanıcının şifresini güncelle")
+	public ResponseEntity<Void> updatePassword(
+			@AuthenticationPrincipal JwtPrincipal principal,
+			@Valid @RequestBody UpdatePasswordRequest request
+	) {
+		if (principal == null) {
+			throw new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Oturum gerekli");
+		}
+		authService.updatePassword(principal.user().userId(), request);
+		return ResponseEntity.noContent().build();
 	}
 }

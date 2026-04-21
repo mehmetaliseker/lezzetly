@@ -7,6 +7,7 @@ import { login, register } from "@/services/auth";
 import type { LoginPayload, RegisterPayload } from "@/types/api/auth";
 import { writeTokens } from "@/lib/token-storage";
 import { queryKeys } from "@/lib/query-keys";
+import { parseUserRolePath, UserRolePath } from "@/types/enums";
 
 type AccountType = "customer" | "owner";
 
@@ -26,7 +27,11 @@ export function useLoginMutation() {
 		mutationFn: ({ accountType, payload }: LoginInput) => login(accountType, payload),
 		onSuccess: (data) => {
 			writeTokens(data.tokens);
-			queryClient.setQueryData(queryKeys.auth.currentUser(), data.user);
+			queryClient.setQueryData(queryKeys.auth.session(), data.tokens);
+			queryClient.setQueryData(queryKeys.auth.currentUser(), {
+				...data.user,
+				role: parseUserRolePath(data.user.role) ?? UserRolePath.CUSTOMER,
+			});
 		},
 	});
 }
@@ -37,7 +42,11 @@ export function useRegisterMutation() {
 		mutationFn: ({ accountType, payload }: RegisterInput) => register(accountType, payload),
 		onSuccess: (data) => {
 			writeTokens(data.tokens);
-			queryClient.setQueryData(queryKeys.auth.currentUser(), data.user);
+			queryClient.setQueryData(queryKeys.auth.session(), data.tokens);
+			queryClient.setQueryData(queryKeys.auth.currentUser(), {
+				...data.user,
+				role: parseUserRolePath(data.user.role) ?? UserRolePath.CUSTOMER,
+			});
 		},
 	});
 }

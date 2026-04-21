@@ -2,20 +2,24 @@
 
 import { Calendar } from "@heroui/react";
 import Image from "next/image";
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
 import { PageContainer } from "@/components/layout/page-container";
+import { useToast } from "@/components/feedback/toast-center";
 import { HomeFooter } from "@/features/home/components/home-footer";
 import { useCreateReservation } from "@/hooks/use-create-reservation";
+import { usePastReservations } from "@/hooks/use-past-reservations";
 import { useReservationAvailability } from "@/hooks/use-reservation-availability";
 import { useRestaurant } from "@/hooks/use-restaurant";
+import { resolveApiMediaUrl } from "@/lib/media-url";
+import { parseReservationStatusPath, ReservationStatusPath } from "@/types/enums";
 
 type ReservationDetailPageProps = {
-	params: {
+	params: Promise<{
 		id: string;
-	};
+	}>;
 };
 
 type CalendarValue = {
@@ -23,17 +27,35 @@ type CalendarValue = {
 };
 
 export default function ReservationDetailPage({ params }: ReservationDetailPageProps) {
-	const restaurantId = Number(params.id);
+	const resolvedParams = use(params);
+	const restaurantId = Number(resolvedParams.id);
 	const restaurantQuery = useRestaurant(restaurantId);
 	const createReservation = useCreateReservation();
+	const toast = useToast();
 	const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
 	const [selectedTableNo, setSelectedTableNo] = useState<number | null>(null);
 	const [selectedHours, setSelectedHours] = useState<number[]>([]);
 	const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
+	const [tablePage, setTablePage] = useState<number>(1);
 	const availabilityQuery = useReservationAvailability(
 		Number.isFinite(restaurantId) ? restaurantId : null,
 		selectedDate
 	);
+	const pastQuery = usePastReservations(Number.isFinite(restaurantId) ? restaurantId : null, 5);
+
+	useEffect(() => {
+		if (createReservation.isError) {
+			toast.showError(createReservation.error.message);
+		}
+	}, [createReservation.error, createReservation.isError, toast]);
+
+	useEffect(() => {
+		if (!createReservation.isSuccess) {
+			return;
+		}
+		toast.showSuccess("Rezervasyon oluşturuldu");
+		createReservation.reset();
+	}, [createReservation, createReservation.isSuccess, toast]);
 
 	if (restaurantQuery.isLoading) {
 		return <LoadingState title="Restoran yükleniyor" message="Detay sayfası hazırlanıyor…" />;
@@ -44,11 +66,15 @@ export default function ReservationDetailPage({ params }: ReservationDetailPageP
 
 	const restaurant = restaurantQuery.data;
 	const detailImages = restaurant.detailImageUrls ?? [];
-	const mainImage = activeImageUrl ?? restaurant.mainImageUrl;
+	const rawMain = activeImageUrl ?? restaurant.mainImageUrl;
+	const mainImage = rawMain ? resolveApiMediaUrl(rawMain) : null;
 	const availability = availabilityQuery.data;
 	const tableOptions = availability?.tables ?? [];
 	const activeTable = tableOptions.find((item) => item.tableNo === selectedTableNo) ?? null;
 	const currentHour = selectedDate === new Date().toISOString().slice(0, 10) ? new Date().getHours() : -1;
+	const tablePageSize = 60;
+	const tablePageCount = Math.max(1, Math.ceil(tableOptions.length / tablePageSize));
+	const visibleTables = tableOptions.slice((tablePage - 1) * tablePageSize, tablePage * tablePageSize);
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col bg-stone-950">
@@ -63,6 +89,7 @@ export default function ReservationDetailPage({ params }: ReservationDetailPageP
 								alt={`${restaurant.name} ana görsel`}
 								fill
 								className="object-cover transition-opacity duration-500"
+								unoptimized
 							/>
 						) : (
 							<div className="flex h-full items-center justify-center text-6xl text-stone-600">🖼</div>
@@ -78,10 +105,11 @@ export default function ReservationDetailPage({ params }: ReservationDetailPageP
 									onClick={() => setActiveImageUrl(imageUrl)}
 								>
 									<Image
-										src={imageUrl}
+										src={resolveApiMediaUrl(imageUrl)}
 										alt={`${restaurant.name} detay görsel ${index + 1}`}
 										fill
 										className="object-cover transition-transform duration-300 hover:scale-105"
+										unoptimized
 									/>
 								</button>
 							))}
@@ -90,32 +118,58 @@ export default function ReservationDetailPage({ params }: ReservationDetailPageP
 				</div>
 
 				<div className="mt-6 grid gap-6 lg:grid-cols-3">
-					<div className="rounded-2xl border border-stone-800 bg-stone-900 p-4">
-						<p className="mb-2 text-sm font-semibold text-stone-300">Tarih seçin</p>
-						<Calendar
-							aria-label="Rezervasyon tarihi"
-							onChange={(value: CalendarValue) => {
-								setSelectedDate(value.toString());
-								setSelectedHours([]);
-							}}
-						>
-							<Calendar.Header>
-								<Calendar.Heading />
-								<Calendar.NavButton slot="previous" />
-								<Calendar.NavButton slot="next" />
-							</Calendar.Header>
-							<Calendar.Grid>
-								<Calendar.GridHeader>
-									{(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-								</Calendar.GridHeader>
-								<Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
-							</Calendar.Grid>
-						</Calendar>
+					<div className="flex flex-col gap-4">
+						<div className="rounded-2xl border border-stone-800 bg-stone-900 p-4">
+							<p className="mb-2 text-sm font-semibold text-stone-300">Tarih seçin</p>
+							<Calendar
+								aria-label="Rezervasyon tarihi"
+								onChange={(value: CalendarValue) => {
+									setSelectedDate(value.toString());
+									setSelectedHours([]);
+									setTablePage(1);
+								}}
+							>
+								<Calendar.Header>
+									<Calendar.Heading />
+									<Calendar.NavButton slot="previous" />
+									<Calendar.NavButton slot="next" />
+								</Calendar.Header>
+								<Calendar.Grid>
+									<Calendar.GridHeader>
+										{(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
+									</Calendar.GridHeader>
+									<Calendar.GridBody>{(date) => <Calendar.Cell date={date} />}</Calendar.GridBody>
+								</Calendar.Grid>
+							</Calendar>
+						</div>
+						<div className="rounded-2xl border border-stone-800 bg-stone-900 p-4">
+							<p className="text-sm font-semibold text-stone-300">Son geçmiş rezervasyonlar</p>
+							{pastQuery.isLoading ? (
+								<p className="mt-2 text-xs text-stone-500">Yükleniyor…</p>
+							) : pastQuery.isError || !pastQuery.data?.length ? (
+								<p className="mt-2 text-xs text-stone-500">Giriş yapılmışsa ve geçmiş kayıt varsa burada listelenir.</p>
+							) : (
+								<ul className="mt-3 space-y-2">
+									{pastQuery.data.map((item) => (
+										<li
+											key={item.id}
+											className="rounded-md border border-stone-800 bg-stone-950/80 px-3 py-2 text-xs text-stone-300"
+										>
+											<span className="font-medium text-stone-100">{item.date}</span> · Masa {item.tableNo} ·{" "}
+											{(item.selectedHours ?? []).map((h) => `${h}:00`).join(", ")} ·{" "}
+											{parseReservationStatusPath(item.status) === ReservationStatusPath.CANCELLED
+												? "İptal"
+												: item.status}
+										</li>
+									))}
+								</ul>
+							)}
+						</div>
 					</div>
 					<div className="rounded-2xl border border-stone-800 bg-stone-900 p-4 lg:col-span-2">
 						<p className="text-sm font-semibold text-stone-300">Masa seçin</p>
-						<div className="mt-3 flex flex-wrap gap-2">
-							{tableOptions.map((table) => (
+						<div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10">
+							{visibleTables.map((table) => (
 								<button
 									key={table.tableNo}
 									className={`rounded-md px-3 py-2 text-sm ${
@@ -133,10 +187,33 @@ export default function ReservationDetailPage({ params }: ReservationDetailPageP
 								</button>
 							))}
 						</div>
+						{tableOptions.length > tablePageSize ? (
+							<div className="mt-3 flex items-center justify-end gap-2">
+								<button
+									type="button"
+									disabled={tablePage <= 1}
+									className="rounded-md bg-stone-800 px-3 py-1 text-xs text-stone-200 disabled:opacity-40"
+									onClick={() => setTablePage((prev) => Math.max(1, prev - 1))}
+								>
+									Önceki
+								</button>
+								<span className="text-xs text-stone-400">
+									Sayfa {tablePage} / {tablePageCount}
+								</span>
+								<button
+									type="button"
+									disabled={tablePage >= tablePageCount}
+									className="rounded-md bg-stone-800 px-3 py-1 text-xs text-stone-200 disabled:opacity-40"
+									onClick={() => setTablePage((prev) => Math.min(tablePageCount, prev + 1))}
+								>
+									Sonraki
+								</button>
+							</div>
+						) : null}
 						<p className="mt-4 text-sm font-semibold text-stone-300">Saat seçimi (çoklu)</p>
 						<div className="mt-3 grid grid-cols-4 gap-2 md:grid-cols-6">
 							{Array.from({ length: 24 }, (_, hour) => {
-								const disabledByPast = hour < currentHour;
+								const disabledByPast = hour <= currentHour;
 								const disabledByReservation = activeTable?.disabledHours.includes(hour) ?? false;
 								const isDisabled = disabledByPast || disabledByReservation || selectedTableNo == null;
 								const isSelected = selectedHours.includes(hour);
@@ -186,9 +263,6 @@ export default function ReservationDetailPage({ params }: ReservationDetailPageP
 								{createReservation.isPending ? "Oluşturuluyor…" : "Rezervasyonu oluştur"}
 							</button>
 						</div>
-						{createReservation.isError ? (
-							<p className="mt-3 text-sm text-red-400">{createReservation.error.message}</p>
-						) : null}
 					</div>
 				</div>
 			</PageContainer>

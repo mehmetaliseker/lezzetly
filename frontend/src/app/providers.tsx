@@ -2,10 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { clearTokens, readAccessToken } from "@/lib/token-storage";
 import { queryKeys } from "@/lib/query-keys";
+import { ToastProvider } from "@/components/feedback/toast-center";
 
 export function AppProviders({ children }: { children: ReactNode }) {
 	const pathname = usePathname();
@@ -33,6 +35,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
 			}
 			if (isTokenExpired(accessToken)) {
 				clearTokens();
+				queryClient.setQueryData(queryKeys.auth.session(), null);
 				queryClient.setQueryData(queryKeys.auth.currentUser(), null);
 			}
 		}, 10_000);
@@ -40,7 +43,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
 	}, [queryClient]);
 
 	return (
-		<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+		<QueryClientProvider client={queryClient}>
+			<ToastProvider>{children}</ToastProvider>
+			<ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+		</QueryClientProvider>
 	);
 }
 

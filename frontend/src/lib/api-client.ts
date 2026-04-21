@@ -92,7 +92,10 @@ function canAutoRefresh(path: string): boolean {
 
 function buildRequestInit(init: RequestInit | undefined, includeAccessToken: boolean): RequestInit {
 	const headers = new Headers(init?.headers);
-	headers.set("Accept", "application/json");
+	const body = init?.body;
+	if (!(body instanceof FormData)) {
+		headers.set("Accept", "application/json");
+	}
 	if (includeAccessToken) {
 		const accessToken = readAccessToken();
 		if (accessToken) {
@@ -104,6 +107,17 @@ function buildRequestInit(init: RequestInit | undefined, includeAccessToken: boo
 		...init,
 		headers,
 	};
+}
+
+export async function apiFormData(path: string, formData: FormData): Promise<void> {
+	const response = await sendWithAuth(path, {
+		method: "POST",
+		body: formData,
+	});
+	if (!response.ok) {
+		const message = await readErrorBody(response);
+		throw new ApiError(message, response.status);
+	}
 }
 
 async function readErrorBody(response: Response): Promise<string> {

@@ -35,7 +35,7 @@ class AuthControllerMvcTest {
 		when(authService.registerCustomer(any())).thenReturn(
 				new AuthResponse(
 						"Kayıt başarılı",
-						new AuthUserResponse(5L, "A", "B", "test@example.com", "CUSTOMER"),
+						new AuthUserResponse(5L, "A", "B", "test@example.com", null, "CUSTOMER"),
 						new TokenPairResponse("access", "refresh", 900, 1209600)
 				));
 

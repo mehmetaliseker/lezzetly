@@ -1,27 +1,29 @@
 import { apiJson } from "@/lib/api-client";
+import { queryEndpoints } from "@/lib/query-endpoints";
 import type {
 	AuthResponse,
 	CurrentUserResponse,
 	LoginPayload,
 	RefreshTokenResponse,
 	RegisterPayload,
+	UpdateProfilePayload,
 } from "@/types/api/auth";
 
 type AccountType = "customer" | "owner";
 
-function resolveBase(accountType: AccountType): string {
+function resolveRegisterLoginPath(accountType: AccountType, action: "login" | "register"): string {
 	switch (accountType) {
 		case "customer":
-			return "/api/auth/customer";
+			return action === "login" ? queryEndpoints.auth.customerLogin : queryEndpoints.auth.customerRegister;
 		case "owner":
-			return "/api/auth/owner";
+			return action === "login" ? queryEndpoints.auth.ownerLogin : queryEndpoints.auth.ownerRegister;
 		default:
-			return "/api/auth/customer";
+			return queryEndpoints.auth.customerLogin;
 	}
 }
 
 export async function login(accountType: AccountType, payload: LoginPayload): Promise<AuthResponse> {
-	return apiJson<AuthResponse>(`${resolveBase(accountType)}/login`, {
+	return apiJson<AuthResponse>(resolveRegisterLoginPath(accountType, "login"), {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -31,7 +33,7 @@ export async function login(accountType: AccountType, payload: LoginPayload): Pr
 }
 
 export async function register(accountType: AccountType, payload: RegisterPayload): Promise<AuthResponse> {
-	return apiJson<AuthResponse>(`${resolveBase(accountType)}/register`, {
+	return apiJson<AuthResponse>(resolveRegisterLoginPath(accountType, "register"), {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -41,7 +43,7 @@ export async function register(accountType: AccountType, payload: RegisterPayloa
 }
 
 export async function refresh(refreshToken: string): Promise<RefreshTokenResponse> {
-	return apiJson<RefreshTokenResponse>("/api/auth/refresh", {
+	return apiJson<RefreshTokenResponse>(queryEndpoints.auth.refresh, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -51,7 +53,7 @@ export async function refresh(refreshToken: string): Promise<RefreshTokenRespons
 }
 
 export async function logout(refreshToken: string): Promise<void> {
-	await apiJson<void>("/api/auth/logout", {
+	await apiJson<void>(queryEndpoints.auth.logout, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -61,5 +63,25 @@ export async function logout(refreshToken: string): Promise<void> {
 }
 
 export async function me(): Promise<CurrentUserResponse> {
-	return apiJson<CurrentUserResponse>("/api/auth/me");
+	return apiJson<CurrentUserResponse>(queryEndpoints.auth.me);
+}
+
+export async function updateMe(payload: UpdateProfilePayload): Promise<CurrentUserResponse> {
+	return apiJson<CurrentUserResponse>(queryEndpoints.auth.me, {
+		method: "PATCH",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function updatePassword(payload: { currentPassword: string; newPassword: string }): Promise<void> {
+	await apiJson<void>(queryEndpoints.auth.mePassword, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(payload),
+	});
 }

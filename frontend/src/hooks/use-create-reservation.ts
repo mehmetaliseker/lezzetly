@@ -10,8 +10,18 @@ export function useCreateReservation() {
 
 	return useMutation({
 		mutationFn: (payload: CreateReservationPayload) => createReservation(payload),
-		onSuccess: () => {
+		onSuccess: (_data, payload) => {
 			void queryClient.invalidateQueries({ queryKey: queryKeys.reservations.all });
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.reservations.availability(payload.restaurantId, payload.date),
+			});
+			void queryClient.invalidateQueries({
+				predicate: (query) =>
+					Array.isArray(query.queryKey) &&
+					query.queryKey[0] === "reservations" &&
+					query.queryKey[1] === "past" &&
+					query.queryKey[2] === payload.restaurantId,
+			});
 		},
 	});
 }

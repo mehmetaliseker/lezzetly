@@ -3,8 +3,13 @@
  * Endpoint açıldığında: services/reference.ts + useQuery(queryKeys.reference.*) ile değiştirin.
  */
 
-export const referenceUserRoles = ["CUSTOMER", "OWNER", "ADMIN"] as const;
-export type ReferenceUserRole = (typeof referenceUserRoles)[number];
+import type { ReservationStatusApiValue, UserRoleApiValue } from "@/types/enums";
+import { reservationStatusPathByApi, userRolePathByApi } from "@/types/enums";
 
-export const referenceReservationStatuses = ["PENDING", "CONFIRMED", "CANCELLED"] as const;
-export type ReferenceReservationStatus = (typeof referenceReservationStatuses)[number];
+export const referenceUserRoles = Object.keys(userRolePathByApi) as readonly UserRoleApiValue[];
+export type ReferenceUserRole = UserRoleApiValue;
+
+export const referenceReservationStatuses = Object.keys(
+	reservationStatusPathByApi
+) as readonly ReservationStatusApiValue[];
+export type ReferenceReservationStatus = ReservationStatusApiValue;
