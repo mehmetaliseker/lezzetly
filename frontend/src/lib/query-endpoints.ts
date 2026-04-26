@@ -35,6 +35,8 @@ export const queryEndpoints = {
 		mePast: ReservationEndpoint.ME_PAST,
 		meRecent: ReservationEndpoint.ME_RECENT,
 		meList: ReservationEndpoint.ME_LIST,
+		cancel: (reservationId: number) =>
+			ReservationEndpoint.CANCEL.replace("{reservationId}", reservationId.toString()),
 	},
 	featureFlags: {
 		list: FeatureFlagEndpoint.LIST,

@@ -19,4 +19,6 @@ public interface ReservationService {
 	List<ReservationResponse> listRecentForRestaurant(Long userId, Long restaurantId, int limit);
 
 	List<CustomerReservationCardResponse> listMine(Long userId, int limit);
+
+	void cancelMyUpcomingReservation(Long userId, Long reservationId);
 }

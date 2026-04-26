@@ -80,14 +80,19 @@ async function sendWithAuth(path: string, init?: RequestInit): Promise<Response>
 }
 
 function shouldAttachAccessToken(path: string): boolean {
-	if (path === "/api/auth/me") {
+	if (path === "/api/auth/me" || path === "/api/auth/me/password" || path === "/api/auth/logout") {
 		return true;
 	}
 	return !path.startsWith("/api/auth/");
 }
 
 function canAutoRefresh(path: string): boolean {
-	return path === "/api/auth/me" || !path.startsWith("/api/auth/");
+	return (
+		path === "/api/auth/me" ||
+		path === "/api/auth/me/password" ||
+		path === "/api/auth/logout" ||
+		!path.startsWith("/api/auth/")
+	);
 }
 
 function buildRequestInit(init: RequestInit | undefined, includeAccessToken: boolean): RequestInit {
@@ -121,6 +126,9 @@ export async function apiFormData(path: string, formData: FormData): Promise<voi
 }
 
 async function readErrorBody(response: Response): Promise<string> {
+	if (response.status === 401 || response.status === 403) {
+		return "Oturum gerekli";
+	}
 	try {
 		const body = (await response.json()) as { message?: string };
 		return body.message ?? `İstek başarısız (${response.status})`;

@@ -12,6 +12,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import com.lezzetly.backend.domain.Reservation;
 import com.lezzetly.backend.domain.ReservationStatus;
@@ -118,6 +120,18 @@ public class DefaultReservationService implements ReservationService {
 	@Override
 	public List<CustomerReservationCardResponse> listMine(Long userId, int limit) {
 		return reservationRepository.findMineByUserLimited(userId, limit);
+	}
+
+	@Override
+	@Transactional
+	public void cancelMyUpcomingReservation(Long userId, Long reservationId) {
+		boolean cancelled = reservationRepository.cancelUpcomingByIdAndUser(reservationId, userId);
+		if (!cancelled) {
+			throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"Yalnızca yaklaşan rezervasyonlar iptal edilebilir"
+			);
+		}
 	}
 
 	private void applyBusinessHourRules(Restaurant restaurant, LocalDate date, Set<Integer> disabledHours) {

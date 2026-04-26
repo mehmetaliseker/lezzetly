@@ -1,34 +1,23 @@
 "use client";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 
 import { ErrorState } from "@/components/feedback/error-state";
 import { LoadingState } from "@/components/feedback/loading-state";
+import { useToast } from "@/components/feedback/toast-center";
 import { PageContainer } from "@/components/layout/page-container";
 import { useMyReservations } from "@/hooks/use-my-reservations";
+import { queryKeys } from "@/lib/query-keys";
 import { isReservationInPast } from "@/lib/reservation-past";
-import type { CustomerReservationCardResponse } from "@/services/reservations";
-import { AppRoute, parseReservationStatusPath, ReservationStatusPath } from "@/types/enums";
+import { cancelMyReservation, type CustomerReservationCardResponse } from "@/services/reservations";
+import { AppRoute } from "@/types/enums";
 
 function formatHours(hours: number[]): string {
 	if (hours.length === 0) {
 		return "—";
 	}
 	return [...hours].sort((a, b) => a - b).map((h) => `${h.toString().padStart(2, "0")}:00`).join(", ");
-}
-
-function resolveStatusLabel(status: string): string {
-	const path = parseReservationStatusPath(status);
-	if (path === ReservationStatusPath.CANCELLED) {
-		return "İptal";
-	}
-	if (path === ReservationStatusPath.CONFIRMED) {
-		return "Onaylı";
-	}
-	if (path === ReservationStatusPath.PENDING) {
-		return "Beklemede";
-	}
-	return status;
 }
 
 function splitByPast(items: CustomerReservationCardResponse[]): {
@@ -48,7 +37,17 @@ function splitByPast(items: CustomerReservationCardResponse[]): {
 	return { upcoming, past };
 }
 
-function ReservationCard({ item }: { item: CustomerReservationCardResponse }) {
+function ReservationCard({
+	item,
+	isUpcoming,
+	onCancel,
+	isCancelling,
+}: {
+	item: CustomerReservationCardResponse;
+	isUpcoming: boolean;
+	onCancel: (reservationId: number) => void;
+	isCancelling: boolean;
+}) {
 	return (
 		<li className="rounded-xl border border-stone-800 bg-stone-900/90 px-4 py-3 text-sm text-stone-200">
 			<div className="flex flex-wrap items-start justify-between gap-2">
@@ -59,17 +58,27 @@ function ReservationCard({ item }: { item: CustomerReservationCardResponse }) {
 					</p>
 				</div>
 				<div className="text-right text-xs text-stone-400">
-					<p>{resolveStatusLabel(item.status)}</p>
+					<p>Ücret:</p>
 					<p className="mt-1 font-medium text-stone-200">{Number(item.totalPrice).toFixed(2)} TL</p>
 				</div>
 			</div>
-			<div className="mt-3">
+			<div className="mt-3 flex items-center justify-between gap-3">
 				<Link
 					className="text-xs font-medium text-amber-400 underline-offset-2 hover:underline"
 					href={`${AppRoute.RESERVATION}/${item.restaurantId}`}
 				>
 					Restoran rezervasyon sayfası
 				</Link>
+				{isUpcoming ? (
+					<button
+						type="button"
+						className="inline-flex min-h-8 items-center justify-center rounded-md border border-red-600/60 bg-red-950/40 px-3 py-1 text-xs font-semibold text-red-200 transition hover:bg-red-900/50 disabled:cursor-not-allowed disabled:opacity-60"
+						onClick={() => onCancel(item.id)}
+						disabled={isCancelling}
+					>
+						{isCancelling ? "İptal ediliyor…" : "İptal et"}
+					</button>
+				) : null}
 			</div>
 		</li>
 	);
@@ -77,6 +86,18 @@ function ReservationCard({ item }: { item: CustomerReservationCardResponse }) {
 
 export function MyReservationsView() {
 	const query = useMyReservations(100);
+	const queryClient = useQueryClient();
+	const toast = useToast();
+	const cancelMutation = useMutation({
+		mutationFn: (reservationId: number) => cancelMyReservation(reservationId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.reservations.all });
+			toast.showSuccess("Rezervasyon iptal edildi");
+		},
+		onError: (error) => {
+			toast.showError(error.message);
+		},
+	});
 
 	if (query.isLoading) {
 		return <LoadingState title="Rezervasyonlar" message="Kayıtlarınız yükleniyor…" />;
@@ -113,7 +134,13 @@ export function MyReservationsView() {
 						) : (
 							<ul className="mt-3 space-y-3">
 								{upcoming.map((item) => (
-									<ReservationCard key={item.id} item={item} />
+									<ReservationCard
+										key={item.id}
+										item={item}
+										isUpcoming
+										onCancel={(reservationId) => cancelMutation.mutate(reservationId)}
+										isCancelling={cancelMutation.isPending}
+									/>
 								))}
 							</ul>
 						)}
@@ -125,7 +152,13 @@ export function MyReservationsView() {
 						) : (
 							<ul className="mt-3 space-y-3">
 								{past.map((item) => (
-									<ReservationCard key={item.id} item={item} />
+									<ReservationCard
+										key={item.id}
+										item={item}
+										isUpcoming={false}
+										onCancel={() => undefined}
+										isCancelling={false}
+									/>
 								))}
 							</ul>
 						)}

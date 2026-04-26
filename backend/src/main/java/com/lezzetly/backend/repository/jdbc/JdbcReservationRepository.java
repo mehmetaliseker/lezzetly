@@ -67,6 +67,31 @@ public class JdbcReservationRepository implements ReservationRepository {
 			LIMIT ?
 			""";
 
+	private static final String CANCEL_UPCOMING_BY_ID_AND_USER = """
+			UPDATE reservations r
+			SET status = 'CANCELLED'
+			WHERE r.id = ?
+			  AND r.user_id = ?
+			  AND r.status <> 'CANCELLED'
+			  AND (
+			    r.reservation_date > CURRENT_DATE
+			    OR (
+			      r.reservation_date = CURRENT_DATE
+			      AND EXISTS (
+			        SELECT 1
+			        FROM reservation_slots rs
+			        WHERE rs.reservation_id = r.id
+			          AND rs.slot_hour > EXTRACT(HOUR FROM CURRENT_TIMESTAMP)
+			      )
+			    )
+			  )
+			""";
+
+	private static final String DELETE_SLOTS_BY_RESERVATION_ID = """
+			DELETE FROM reservation_slots
+			WHERE reservation_id = ?
+			""";
+
 	private final JdbcTemplate jdbcTemplate;
 
 	public JdbcReservationRepository(JdbcTemplate jdbcTemplate) {
@@ -182,6 +207,17 @@ public class JdbcReservationRepository implements ReservationRepository {
 				userId,
 				limit
 		);
+	}
+
+	@Override
+	@Transactional
+	public boolean cancelUpcomingByIdAndUser(Long reservationId, Long userId) {
+		int updated = jdbcTemplate.update(CANCEL_UPCOMING_BY_ID_AND_USER, reservationId, userId);
+		if (updated <= 0) {
+			return false;
+		}
+		jdbcTemplate.update(DELETE_SLOTS_BY_RESERVATION_ID, reservationId);
+		return true;
 	}
 
 	private static List<Integer> parseHoursCsv(String csv) {

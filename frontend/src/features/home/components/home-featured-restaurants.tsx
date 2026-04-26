@@ -89,7 +89,7 @@ export function HomeFeaturedRestaurants() {
 							<li key={restaurant.id}>
 								<Link
 									className="group block h-full rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-700/40 focus-visible:ring-offset-2"
-									href={`/restaurants/${restaurant.id}`}
+									href={`/rezervasyon/${restaurant.id}`}
 								>
 									<article className="flex h-full flex-col overflow-hidden rounded-2xl border border-stone-200/90 bg-stone-50/40 shadow-sm ring-1 ring-stone-950/4 transition duration-300 group-hover:border-stone-300 group-hover:shadow-lg">
 										<div className="relative aspect-4/3 w-full overflow-hidden bg-stone-200">

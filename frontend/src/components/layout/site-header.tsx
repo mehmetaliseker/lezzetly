@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useLogoutMutation } from "@/hooks/use-logout";
@@ -38,9 +39,6 @@ function resolveLoginButtonClassName(variant: "primary" | "secondary" | "tertiar
 const logoutButtonClassName =
 	"inline-flex items-center justify-center rounded-md bg-stone-700 px-4 py-2 text-sm font-semibold text-stone-100 shadow-sm transition hover:bg-red-600 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 sm:px-5";
 
-const profileButtonClassName =
-	"inline-flex items-center justify-center rounded-md border border-stone-600/90 bg-stone-900 px-4 py-2 text-sm font-semibold text-stone-100 shadow-sm transition hover:border-stone-500 hover:bg-stone-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-500/50 sm:px-5";
-
 export function SiteHeader() {
 	const router = useRouter();
 	const variant = useNavbarVariant();
@@ -51,6 +49,24 @@ export function SiteHeader() {
 	const isOwner = currentUserQuery.data?.role === UserRolePath.OWNER;
 	const shouldHideMenuLinks = variant === "primary" || variant === "secondary";
 	const isAuthPage = variant === "secondary";
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const mobileMenuRef = useRef<HTMLDivElement | null>(null);
+
+	useEffect(() => {
+		if (!isMobileMenuOpen) {
+			return;
+		}
+		const handlePointerDown = (event: MouseEvent) => {
+			const target = event.target as Node | null;
+			if (mobileMenuRef.current != null && target != null && !mobileMenuRef.current.contains(target)) {
+				setIsMobileMenuOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handlePointerDown);
+		return () => document.removeEventListener("mousedown", handlePointerDown);
+	}, [isMobileMenuOpen]);
+
+	const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
 	return (
 		<header className={resolveHeaderClassName(variant)}>
@@ -61,51 +77,100 @@ export function SiteHeader() {
 				>
 					Lezzetly
 				</Link>
-				<nav
-					aria-label="Ana menü"
-					className="flex items-center gap-1 sm:gap-6"
-				>
-					{isCustomer ? (
-						<div className="flex flex-wrap items-center gap-4 sm:gap-8">
+				<nav aria-label="Ana menü" className="flex items-center gap-1 sm:gap-6">
+					<div className="hidden items-center gap-4 sm:gap-8 md:flex">
+						{isCustomer ? (
 							<Link className={navMuted} href={AppRoute.RESERVATION}>
 								Rezervasyon
 							</Link>
+						) : null}
+						{isCustomer ? (
 							<Link className={navMuted} href={AppRoute.MY_RESERVATIONS}>
 								Rezervasyonlarım
 							</Link>
-						</div>
-					) : isOwner ? (
-						<div className="flex flex-wrap items-center gap-4 sm:gap-8">
+						) : null}
+						{isCustomer ? (
+							<Link className={navMuted} href={AppRoute.PROFILE}>
+								Profili Görüntüle
+							</Link>
+						) : null}
+						{isOwner ? (
 							<Link className={navMuted} href={AppRoute.OWNER_PROFILE}>
 								İşletme Profili
 							</Link>
+						) : null}
+						{isOwner ? (
 							<Link className={navMuted} href={AppRoute.OWNER_ACCOUNT}>
 								Kişisel Profil
 							</Link>
-						</div>
-					) : shouldHideMenuLinks ? null : (
-						<div className="hidden items-center gap-8 md:flex">
+						) : null}
+						{!isAuthenticated && !shouldHideMenuLinks ? (
 							<Link className={navMuted} href={AppRoute.HOME}>
 								Ana sayfa
 							</Link>
+						) : null}
+						{!isAuthenticated && !shouldHideMenuLinks ? (
 							<Link className={navMuted} href={AppRoute.RESTAURANTS}>
 								Restoranlar
 							</Link>
-						</div>
-					)}
+						) : null}
+					</div>
 					<div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
 						{isAuthenticated ? (
 							<>
-								{isOwner ? null : (
-									<Link className={profileButtonClassName} href={AppRoute.PROFILE}>
-										Profili Görüntüle
-									</Link>
-								)}
+								<div className="relative md:hidden" ref={mobileMenuRef}>
+									<button
+										className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-600 bg-stone-900 text-stone-100 transition hover:bg-stone-800"
+										type="button"
+										aria-expanded={isMobileMenuOpen}
+										aria-label="Menüyü aç veya kapat"
+										onClick={() => setIsMobileMenuOpen((value) => !value)}
+									>
+										<span className="text-lg leading-none">{isMobileMenuOpen ? "×" : "☰"}</span>
+									</button>
+									{isMobileMenuOpen ? (
+										<div className="absolute right-0 top-12 z-50 min-w-52 rounded-md border border-stone-700 bg-stone-900 p-2 shadow-xl">
+											<div className="flex flex-col gap-1">
+												{isCustomer ? (
+													<Link className={navMuted} href={AppRoute.RESERVATION} onClick={closeMobileMenu}>
+														Rezervasyon
+													</Link>
+												) : null}
+												{isCustomer ? (
+													<Link className={navMuted} href={AppRoute.MY_RESERVATIONS} onClick={closeMobileMenu}>
+														Rezervasyonlarım
+													</Link>
+												) : null}
+												{isCustomer ? (
+													<Link className={navMuted} href={AppRoute.PROFILE} onClick={closeMobileMenu}>
+														Profili Görüntüle
+													</Link>
+												) : null}
+												{isOwner ? (
+													<Link className={navMuted} href={AppRoute.OWNER_PROFILE} onClick={closeMobileMenu}>
+														İşletme Profili
+													</Link>
+												) : null}
+												{isOwner ? (
+													<Link className={navMuted} href={AppRoute.OWNER_ACCOUNT} onClick={closeMobileMenu}>
+														Kişisel Profil
+													</Link>
+												) : null}
+											</div>
+										</div>
+									) : null}
+								</div>
 								<button
 									className={logoutButtonClassName}
 									onClick={async () => {
-										await logoutMutation.mutateAsync();
-										router.push(AppRoute.HOME);
+										closeMobileMenu();
+										try {
+											await logoutMutation.mutateAsync();
+										} catch {
+											/* Yerel oturum temizliği onSettled içinde garanti edilir */
+										} finally {
+											router.push(AppRoute.HOME);
+										}
 									}}
 									type="button"
 								>
@@ -116,7 +181,10 @@ export function SiteHeader() {
 							<button
 								disabled={isAuthPage}
 								className={`${resolveLoginButtonClassName(variant)} disabled:cursor-not-allowed disabled:opacity-50`}
-								onClick={() => router.push(AppRoute.LOGIN)}
+								onClick={() => {
+									closeMobileMenu();
+									router.push(AppRoute.LOGIN);
+								}}
 								type="button"
 							>
 								Giriş Yap / Kayıt Ol

@@ -16,4 +16,6 @@ public interface ReservationRepository {
 	List<Reservation> findRecentByUserAndRestaurantLimited(Long userId, Long restaurantId, int limit);
 
 	List<CustomerReservationCardResponse> findMineByUserLimited(Long userId, int limit);
+
+	boolean cancelUpcomingByIdAndUser(Long reservationId, Long userId);
 }

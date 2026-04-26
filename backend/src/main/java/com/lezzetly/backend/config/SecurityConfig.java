@@ -9,13 +9,17 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.lezzetly.backend.security.JwtAuthenticationFilter;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 public class SecurityConfig {
@@ -37,11 +41,49 @@ public class SecurityConfig {
 				.csrf(csrf -> csrf.disable())
 				.cors(Customizer.withDefaults())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers(
+								"/api/health",
+								"/api/auth/customer/login",
+								"/api/auth/customer/register",
+								"/api/auth/owner/login",
+								"/api/auth/owner/register",
+								"/api/auth/refresh",
+								"/api/feature-flags"
+						).permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/restaurants", "/api/restaurants/*", "/api/restaurants/*/images/*")
+						.permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/reservations/availability/*")
+						.permitAll()
+						.requestMatchers(
+								"/api/auth/me",
+								"/api/auth/me/password",
+								"/api/restaurants/owner/profile",
+								"/api/restaurants/owner/profile/images",
+								"/api/reservations/me",
+								"/api/reservations/me/past",
+								"/api/reservations/me/recent",
+								"/api/reservations"
+						).authenticated()
+						.requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
+						.anyRequest().authenticated()
+				)
+				.exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedEntryPoint()))
+				.formLogin(form -> form.disable())
+				.logout(logout -> logout.disable())
 				.anonymous(Customizer.withDefaults())
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
+	}
+
+	private AuthenticationEntryPoint unauthorizedEntryPoint() {
+		return (request, response, authException) -> {
+			response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			response.setContentType("application/json");
+			response.setCharacterEncoding("UTF-8");
+			response.getWriter().write("{\"message\":\"Oturum gerekli\"}");
+		};
 	}
 
 	@Bean

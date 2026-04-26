@@ -9,15 +9,18 @@ public class DefaultFeatureFlagService implements FeatureFlagService {
 	private final boolean autoVerifyEmail;
 	private final boolean mockNotificationEnabled;
 	private final boolean profilePasswordVisibilityToggleEnabled;
+	private final boolean profilePasswordChangeEnabled;
 
 	public DefaultFeatureFlagService(
 			boolean autoVerifyEmail,
 			boolean mockNotificationEnabled,
-			boolean profilePasswordVisibilityToggleEnabled
+			boolean profilePasswordVisibilityToggleEnabled,
+			boolean profilePasswordChangeEnabled
 	) {
 		this.autoVerifyEmail = autoVerifyEmail;
 		this.mockNotificationEnabled = mockNotificationEnabled;
 		this.profilePasswordVisibilityToggleEnabled = profilePasswordVisibilityToggleEnabled;
+		this.profilePasswordChangeEnabled = profilePasswordChangeEnabled;
 	}
 
 	@Override
@@ -37,6 +40,11 @@ public class DefaultFeatureFlagService implements FeatureFlagService {
 						"PROFILE_PASSWORD_VISIBILITY_TOGGLE",
 						profilePasswordVisibilityToggleEnabled,
 						"Profil şifre alanlarında göster/gizle düğmesi"
+				),
+				new FeatureFlagResponse(
+						"PROFILE_PASSWORD_CHANGE_ENABLED",
+						profilePasswordChangeEnabled,
+						"Müşteri ve işletmeci profilinde şifre güncelleme formunu açar"
 				)
 		);
 	}
@@ -54,5 +62,10 @@ public class DefaultFeatureFlagService implements FeatureFlagService {
 	@Override
 	public boolean isProfilePasswordVisibilityToggleEnabled() {
 		return profilePasswordVisibilityToggleEnabled;
+	}
+
+	@Override
+	public boolean isProfilePasswordChangeEnabled() {
+		return profilePasswordChangeEnabled;
 	}
 }

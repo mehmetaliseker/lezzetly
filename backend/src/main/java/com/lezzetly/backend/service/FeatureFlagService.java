@@ -13,4 +13,6 @@ public interface FeatureFlagService {
 	boolean isMockNotificationEnabled();
 
 	boolean isProfilePasswordVisibilityToggleEnabled();
+
+	boolean isProfilePasswordChangeEnabled();
 }

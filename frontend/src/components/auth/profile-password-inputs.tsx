@@ -4,9 +4,19 @@ import { useId, useState } from "react";
 
 type ProfilePasswordInputsProps = {
 	visibilityToggleEnabled: boolean;
+	currentPassword: string;
+	newPassword: string;
+	onCurrentPasswordChange: (value: string) => void;
+	onNewPasswordChange: (value: string) => void;
 };
 
-export function ProfilePasswordInputs({ visibilityToggleEnabled }: ProfilePasswordInputsProps) {
+export function ProfilePasswordInputs({
+	visibilityToggleEnabled,
+	currentPassword,
+	newPassword,
+	onCurrentPasswordChange,
+	onNewPasswordChange,
+}: ProfilePasswordInputsProps) {
 	const baseId = useId();
 	const currentId = `${baseId}-current`;
 	const newId = `${baseId}-new`;
@@ -26,7 +36,15 @@ export function ProfilePasswordInputs({ visibilityToggleEnabled }: ProfilePasswo
 					Mevcut şifre
 				</label>
 				<div className="relative">
-					<input className={inputClass} id={currentId} name="currentPassword" type={currentType} autoComplete="current-password" />
+					<input
+						className={inputClass}
+						id={currentId}
+						name="currentPassword"
+						type={currentType}
+						autoComplete="current-password"
+						value={currentPassword}
+						onChange={(event) => onCurrentPasswordChange(event.target.value)}
+					/>
 					{visibilityToggleEnabled ? (
 						<button
 							type="button"
@@ -45,7 +63,15 @@ export function ProfilePasswordInputs({ visibilityToggleEnabled }: ProfilePasswo
 					Yeni şifre
 				</label>
 				<div className="relative">
-					<input className={inputClass} id={newId} name="newPassword" type={newType} autoComplete="new-password" />
+					<input
+						className={inputClass}
+						id={newId}
+						name="newPassword"
+						type={newType}
+						autoComplete="new-password"
+						value={newPassword}
+						onChange={(event) => onNewPasswordChange(event.target.value)}
+					/>
 					{visibilityToggleEnabled ? (
 						<button
 							type="button"

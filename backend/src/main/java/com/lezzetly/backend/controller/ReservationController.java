@@ -98,4 +98,17 @@ public class ReservationController {
 		int safeLimit = Math.min(Math.max(limit, 1), 200);
 		return reservationService.listMine(principal.user().userId(), safeLimit);
 	}
+
+	@PostMapping("/{reservationId}/cancel")
+	@Operation(summary = "Kullanıcının yaklaşan rezervasyonunu iptal et")
+	public ResponseEntity<Void> cancelMine(
+			@AuthenticationPrincipal JwtPrincipal principal,
+			@PathVariable Long reservationId
+	) {
+		if (principal == null) {
+			throw new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Oturum gerekli");
+		}
+		reservationService.cancelMyUpcomingReservation(principal.user().userId(), reservationId);
+		return ResponseEntity.noContent().build();
+	}
 }

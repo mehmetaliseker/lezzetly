@@ -83,3 +83,9 @@ export async function fetchRecentReservationsForRestaurant(
 export async function fetchMyReservations(limit: number = 100): Promise<CustomerReservationCardResponse[]> {
 	return apiJson<CustomerReservationCardResponse[]>(`${queryEndpoints.reservations.meList}?limit=${limit}`);
 }
+
+export async function cancelMyReservation(reservationId: number): Promise<void> {
+	await apiJson<void>(queryEndpoints.reservations.cancel(reservationId), {
+		method: "POST",
+	});
+}

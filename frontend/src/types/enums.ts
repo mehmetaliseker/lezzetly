@@ -89,6 +89,7 @@ export enum ReservationEndpoint {
 	ME_PAST = "/api/reservations/me/past",
 	ME_RECENT = "/api/reservations/me/recent",
 	ME_LIST = "/api/reservations/me",
+	CANCEL = "/api/reservations/{reservationId}/cancel",
 }
 
 export enum FeatureFlagEndpoint {
